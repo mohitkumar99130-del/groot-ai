@@ -1,0 +1,421 @@
+====================================================================================================
+  GROOT — HARA BHARA PLANET: COMPREHENSIVE TECHNICAL, LOGICAL & ARCHITECTURAL SPECIFICATION
+====================================================================================================
+Project Name      : GROOT (Hara Bhara Planet)
+Domain            : Multimodal Precision Agronomy, Satellite Crop Monitoring & Edge IoT Intelligence
+Version           : 1.0.0 (Production Release)
+Repository        : https://github.com/mohitkumar99130-del/groot-ai
+Live Production   : https://groot-ai-one.vercel.app
+Target Audience   : Smallholder Farmers (Kisan Easy Mode) & Precision Agronomists (Pro Mode)
+
+====================================================================================================
+TABLE OF CONTENTS
+====================================================================================================
+1. EXECUTIVE SUMMARY & PROBLEM STATEMENT
+2. HIGH-LEVEL SYSTEM ARCHITECTURE
+3. TRI-MODAL AI FUSION ENGINE (MATHEMATICAL FORMULATIONS & LOGIC)
+   3.1 Modality 1: Geospatial Sentinel-2 Radiometry (NDVI, NDMI, Thermal IR, RGB)
+   3.2 Modality 2: In-Situ Subsoil IoT Sensor Mesh (VWC, EC, pH, NPK, Temp)
+   3.3 Modality 3: Edge AI Leaf Pathology Vision (MobileNet-v3)
+   3.4 Unified Multi-Modal Hazard Scoring Formula
+   3.5 Explainable AI (XAI) Factor Attribution (SHAP-Style Logic)
+4. AGRONOMIC PRESCRIPTION & PRECISION FERTILIZER CALCULATOR LOGIC
+   4.1 Soil Nutrient Deficit & Commercial Bag Math (Urea, DAP, MOP)
+   4.2 Split-Dose Crop Staging Calendar Logic
+   4.3 Pathogen-Specific Chemical & Bio-Control Dosage Logic
+5. REAL-TIME SATELLITE & MICRO-METEOROLOGY DECISION ENGINE
+   5.1 Open-Meteo API Integration & Coordinate Mapping
+   5.2 WMO Weather Interpretation & Dynamic Spray Window Advisory
+6. 14-DAY TEMPORAL TRAJECTORY FORECASTING MODEL
+   6.1 Untreated Pathological Loss Curve Math
+   6.2 Early AI Intervention Recovery Trajectory Math
+7. AUDIO FEEDBACK & MULTILINGUAL KISAN VOICE ASSISTANT
+   7.1 Web Speech Synthesis Logic (Hindi, English, Hinglish)
+   7.2 Live Frequency-Domain Equalizer Waveform Simulator
+8. MOBILE-FIRST RESPONSIVE ARCHITECTURE & DESIGN TOKENS
+   8.1 Dedicated Multi-Page Routing Architecture
+   8.2 5-Button Thumb-Friendly Bottom Dock & Left Slide-Over Drawer
+   8.3 High-Contrast Obsidian Forest Design System
+9. CODEBASE STRUCTURE & MODULE BREAKDOWN
+10. DEPLOYMENT, CI/CD & BUILD SPECIFICATION
+
+====================================================================================================
+1. EXECUTIVE SUMMARY & PROBLEM STATEMENT
+====================================================================================================
+Traditional agriculture suffers from fragmented diagnostic signals:
+- Satellite imagery alone has high latency (5-day revisits) and cannot detect subsurface root moisture deficits or microscopic fungal spores.
+- Ground IoT sensors alone provide single-point data without field-wide spatial coverage.
+- Manual farmer field inspections are subjective, slow, and often diagnose blast/rust diseases only after irreversible foliar damage (>40% yield loss).
+
+GROOT (Hara Bhara Planet) solves this trilemma by fusing Satellite Earth Observation (Sentinel-2), Subsoil Mesh Telemetry (ESP32), and On-Field Smartphone Camera Vision (Edge MobileNet-v3) into a single, unified, real-time diagnostic and prescription engine with high-clarity voice assistance in vernacular Indian languages.
+
+====================================================================================================
+2. HIGH-LEVEL SYSTEM ARCHITECTURE
+====================================================================================================
+The system follows an asynchronous, reactive, client-side-first architecture with edge computation capabilities:
+
+[ Sentinel-2 Satellite L2A ]      [ ESP32 IoT Soil Mesh ]      [ On-Field Smartphone Camera ]
+         │                                   │                               │
+         ▼                                   ▼                               ▼
+ [ Radiometric Indexing ]          [ MQTT / BLE Telemetry ]        [ MobileNet-v3 Edge Vision ]
+ (NDVI, NDMI, Thermal, RGB)        (VWC%, Temp, pH, EC, NPK)       (Lesion Segmentation, Conf%)
+         │                                   │                               │
+         └─────────────────────────┬─────────┴───────────────────────────────┘
+                                   │
+                                   ▼
+                   [ Tri-Modal Fusion Engine ]
+              Formula: 0.35·S_risk + 0.35·I_risk + 0.30·L_risk
+                                   │
+                 ┌─────────────────┴─────────────────┐
+                 ▼                                   ▼
+      [ Explainable AI Matrix ]            [ Precision Agronomy Rx ]
+      - 3-Way SHAP Attribution             - NPK Soil Deficit Math
+      - Root-Cause Breakdown               - Commercial Bag Quantities
+                                           - Chemical & Bio-Control Dosages
+                 │                                   │
+                 └─────────────────┬─────────────────┘
+                                   │
+                                   ▼
+             [ Real-Time Weather Engine (Open-Meteo) ]
+             - Temperature, Humidity, Wind, Spray Window
+                                   │
+                 ┌─────────────────┴─────────────────┐
+                 ▼                                   ▼
+     [ Mobile-First UI Deck ]             [ Kisan Voice Assistant ]
+     - 5-Button Bottom Dock               - Web Speech Synthesis (Hindi/Eng)
+     - Left Collapsible Sidebar           - Tactile Audio Prescription Cards
+     - Multi-Page Tab Routing             - Printable PDF Audit Dossier
+
+====================================================================================================
+3. TRI-MODAL AI FUSION ENGINE (MATHEMATICAL FORMULATIONS & LOGIC)
+====================================================================================================
+Located at: `src/services/fusionEngine.ts`
+
+The fusion engine runs locally in the browser with sub-millisecond execution time, re-computing composite health, risk percentage, and prescriptions whenever any input modality changes.
+
+----------------------------------------------------------------------------------------------------
+3.1 Modality 1: Geospatial Sentinel-2 Radiometry (Input: FieldZone)
+----------------------------------------------------------------------------------------------------
+Sentinel-2 Level-2A Multi-Spectral Instrument (MSI) optical data is mapped across a 5x5 grid (25 hectares, Zone A1 to Zone E5).
+
+Mathematical Radiometric Indices:
+1. NDVI (Normalized Difference Vegetation Index):
+   Formula: NDVI = (NIR - RED) / (NIR + RED)
+   Bands  : Sentinel-2 Band 8 (842 nm) & Band 4 (665 nm)
+   Scale  : 0.0 (bare soil / water) to 1.0 (dense healthy canopy)
+   Logic  : NDVI < 0.45 indicates severe vegetative degradation or necrosis.
+
+2. NDMI (Normalized Difference Moisture Index):
+   Formula: NDMI = (NIR - SWIR) / (NIR + SWIR)
+   Bands  : Sentinel-2 Band 8 (842 nm) & Band 11 (1610 nm)
+   Scale  : -0.2 (extreme water stress) to +0.6 (high canopy water content)
+   Logic  : NDMI < 0.10 flags acute leaf dehydration.
+
+3. Thermal Surface Radiation:
+   Estimated canopy surface temperature in degrees Celsius (°C).
+   Logic  : Surface Temp > 32°C indicates stomatal closure and transpiration blockage.
+
+Satellite Risk Computation:
+S_risk = max(0, min(100, (1 - NDVI) * 60 + max(0, (0.3 - NDMI) * 80) + max(0, (surfaceTemp - 28) * 3)))
+
+----------------------------------------------------------------------------------------------------
+3.2 Modality 2: In-Situ Subsoil IoT Sensor Mesh (Input: SensorTelemetry)
+----------------------------------------------------------------------------------------------------
+Simulated ESP32 LoRa mesh node packets placed at 15cm root depth.
+
+Variables:
+- VWC (Volumetric Water Content) : 0% - 100% (Capacitive sensor)
+- Soil Temperature               : °C (DS18B20 digital probe)
+- Soil pH                        : 0 - 14 (Glass electrode sensor)
+- Soil EC (Electrical Conduct.)  : mS/cm (Salinity indicator)
+- N-P-K Subsoil Concentration    : mg/kg (Optical spectral probe)
+
+IoT Risk Computation:
+Moisture Deficit Risk = if (VWC < 25%) -> (25 - VWC) * 2.8
+                        if (VWC > 80%) -> (VWC - 80) * 2.0 (Waterlogging)
+                        else -> 0
+Thermal Risk          = max(0, (SoilTemp - 30) * 3.5)
+pH Penalty            = abs(Soil_pH - 6.5) * 12
+I_risk = max(0, min(100, Moisture_Risk + Thermal_Risk + pH_Penalty))
+
+----------------------------------------------------------------------------------------------------
+3.3 Modality 3: Edge AI Leaf Pathology Vision (Input: LeafSample)
+----------------------------------------------------------------------------------------------------
+On-device MobileNet-v3 / ConvNeXt lightweight neural network trained on PlantVillage paddy pathology datasets.
+
+Variables:
+- Pathogen Severity Score : 0 (Clean) to 100 (Full blast lesion coverage)
+- Model Confidence Level  : e.g., 96.4%
+- Diagnosed Pathogen      : Magnaporthe oryzae (Rice Blast), Bipolaris oryzae (Brown Spot), Xanthomonas oryzae (Bacterial Blight), Healthy.
+
+Leaf Risk Computation:
+L_risk = PathogenSeverity * (Confidence / 100)
+
+----------------------------------------------------------------------------------------------------
+3.4 Unified Multi-Modal Hazard Scoring Formula
+----------------------------------------------------------------------------------------------------
+The overall field risk is calculated using weighted tri-modal linear fusion:
+
+Total Risk (%) = (0.35 * S_risk) + (0.35 * I_risk) + (0.30 * L_risk)
+Overall Health Score = max(5, min(100, 100 - Total Risk))
+AI Confidence Score  = 88.0 + (HealthScore * 0.10) + (Random Normal Noise)
+
+Classification Thresholds:
+- Health Score >= 80%           -> Healthy / Low Risk
+- Health Score 60% - 79%        -> Moderate Anomaly / Preventive Advisory
+- Health Score 40% - 59%        -> Elevated Pest / Disease Risk (Active Spray Required)
+- Health Score < 40%            -> Severe Water Stress / Critical Pathological Threat
+
+----------------------------------------------------------------------------------------------------
+3.5 Explainable AI (XAI) Factor Attribution (SHAP-Style Logic)
+----------------------------------------------------------------------------------------------------
+Located at: `src/components/Analytics/XaiAttributionMatrix.tsx`
+
+To prevent AI from being a "black box" to agronomists and agricultural extension officers:
+- Spectral Factor Weight : (S_risk / Total_Sum) * 100 -> e.g., 38% (Canopy vigor deficit & NDMI loss)
+- IoT Telemetry Weight   : (I_risk / Total_Sum) * 100 -> e.g., 34% (Subsoil moisture deficit @ 18% VWC)
+- Edge Visual Weight     : (L_risk / Total_Sum) * 100 -> e.g., 28% (Spindle-shaped fungal lesions)
+
+====================================================================================================
+4. AGRONOMIC PRESCRIPTION & PRECISION FERTILIZER CALCULATOR LOGIC
+====================================================================================================
+Located at: `src/components/Agronomy/FertilizerCalculator.tsx`
+
+----------------------------------------------------------------------------------------------------
+4.1 Soil Nutrient Deficit & Commercial Bag Math
+----------------------------------------------------------------------------------------------------
+Standard Agronomic Recommendation for Paddy/Rice: 120 kg N : 60 kg P2O5 : 40 kg K2O per Hectare.
+
+Mathematical Logic:
+Given:
+- Field Area (Acres): `A` (1 Hectare = 2.471 Acres)
+- Live Soil Sensor Telemetry:
+    Nitrogen (N) current       : `telemetry.nitrogen` (mg/kg, optimal = 45 mg/kg)
+    Phosphorus (P) current     : `telemetry.phosphorus` (mg/kg, optimal = 25 mg/kg)
+    Potassium (K) current      : `telemetry.potassium` (mg/kg, optimal = 40 mg/kg)
+
+Deficit Percentages:
+- N_deficit = max(0.10, min(1.0, (45 - current_N) / 45))
+- P_deficit = max(0.10, min(1.0, (25 - current_P) / 25))
+- K_deficit = max(0.10, min(1.0, (40 - current_K) / 40))
+
+Elemental Required (kg):
+- Total_N_kg = A * 48.5 * N_deficit
+- Total_P_kg = A * 24.3 * P_deficit
+- Total_K_kg = A * 16.2 * K_deficit
+
+Commercial Fertilizer Conversions:
+1. Di-Ammonium Phosphate (DAP, 18-46-0):
+   DAP provides both Phosphorus (46% P2O5) and Nitrogen (18% N).
+   DAP_Total_kg = Total_P_kg / 0.46
+   DAP_Bags (50 kg) = ceil(DAP_Total_kg / 50)
+   N_Supplied_by_DAP = DAP_Total_kg * 0.18
+
+2. Neem Coated Urea (46% N):
+   Remaining_N = max(0, Total_N_kg - N_Supplied_by_DAP)
+   Urea_Total_kg = Remaining_N / 0.46
+   Urea_Bags (45 kg) = ceil(Urea_Total_kg / 45)
+
+3. Muriate of Potash (MOP, 60% K2O):
+   MOP_Total_kg = Total_K_kg / 0.60
+   MOP_Bags (50 kg) = ceil(MOP_Total_kg / 50)
+
+Subsidized Direct Input Cost (INR ₹):
+Total Cost = (Urea_Bags * ₹266.50) + (DAP_Bags * ₹1,350.00) + (MOP_Bags * ₹1,700.00)
+
+----------------------------------------------------------------------------------------------------
+4.2 Split-Dose Crop Staging Calendar Logic
+----------------------------------------------------------------------------------------------------
+To prevent nitrogen leaching and ammonia volatilization:
+1. Basal Transplanting (Day 0) : 50% DAP + 100% MOP + 25% Urea + 5 kg Zinc Sulphate (21%)
+2. Active Tillering (Day 25)   : 50% Urea top-dress with thin water layer (2-3 cm)
+3. Panicle Initiation (Day 50) : 25% Urea balance top-dress for grain filling
+
+----------------------------------------------------------------------------------------------------
+4.3 Pathogen-Specific Chemical & Bio-Control Dosage Logic
+----------------------------------------------------------------------------------------------------
+Located at: `src/components/Agronomy/PestRxCard.tsx`
+
+If Rice Blast (Magnaporthe oryzae) detected:
+- Chemical Rx   : Tricyclazole 75% WP @ 0.6 g / Litre of water (or Isoprothiolane 40% EC @ 1.5 ml/L).
+                  Spray Volume: 200 Litres / Acre via hollow cone nozzle.
+- Bio-Control Rx: Pseudomonas fluorescens @ 10 g / Litre or Trichoderma viride @ 5 g / L.
+- Safe Pre-Harvest Interval (PHI): 21 Days.
+
+====================================================================================================
+5. REAL-TIME SATELLITE & MICRO-METEOROLOGY DECISION ENGINE
+====================================================================================================
+Located at: `src/services/weatherService.ts`
+
+----------------------------------------------------------------------------------------------------
+5.1 Open-Meteo API Integration & Coordinate Mapping
+----------------------------------------------------------------------------------------------------
+Real-world farm plots are mapped to precise high-resolution geographic coordinates:
+1. Paddy Field #04 (Kharif)    : Lat 20.8942° N, Lon 85.8315° E (Cuttack, Odisha Rice Belt)
+2. North Terrace #08 (Basmati) : Lat 30.7333° N, Lon 76.7794° E (Karnal, Haryana Basmati Belt)
+3. Canal Basin #12 (Wheat)     : Lat 23.2599° N, Lon 77.4126° E (Sehore, MP Sharbati Wheat Belt)
+
+Endpoint:
+`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=auto`
+
+----------------------------------------------------------------------------------------------------
+5.2 WMO Weather Interpretation & Dynamic Spray Window Advisory
+----------------------------------------------------------------------------------------------------
+WMO Weather Codes:
+- 0, 1        : Clear Sky / Mainly Clear -> High sunlight, good photosynthetically active radiation (PAR).
+- 2, 3        : Partly Cloudy / Overcast.
+- 51-65, 80-82: Drizzle / Heavy Rain Surge -> Washout hazard.
+- 95-99       : Thunderstorm Warning -> Immediate halt.
+
+Agronomic Spray Feasibility Formula:
+- If Rain > 0.5 mm OR Wind Speed > 20 km/h:
+    Advisory = "Unfavorable / छिड़काव न करें (तेज़ हवा / बारिश का खतरा)"
+- If Wind Speed > 12 km/h OR Humidity > 85% OR Humidity < 35%:
+    Advisory = "Caution / सावधानीपूर्वक स्प्रे करें (हवा / उच्च नमी)"
+- Else:
+    Advisory = "Optimal / छिड़काव के लिए सर्वोत्तम समय (Good Agronomy Window)"
+
+====================================================================================================
+6. 14-DAY TEMPORAL TRAJECTORY FORECASTING MODEL
+====================================================================================================
+Located at: `src/components/Analytics/TemporalForecastChart.tsx`
+
+Mathematical modeling comparing two parallel futures across a 14-day window (Day -7 to Day +7):
+
+1. Untreated Pathological Loss Curve (Red):
+   NDVI(t) = NDVI_0 * exp(-k_decay * (t - t_infection))
+   Risk(t) = min(98%, Risk_0 + (1 - exp(-0.18 * t)) * (100 - Risk_0))
+   Yield Loss Projection: Up to -38.5% at harvest.
+
+2. Early AI Intervention Recovery Curve (Emerald):
+   Following Tricyclazole fungicide / balanced NPK application at t = 0:
+   NDVI(t) = NDVI_current + (NDVI_healthy - NDVI_current) * (1 / (1 + exp(-0.6 * (t - 3))))
+   Risk(t) = max(12%, Risk_current * exp(-0.42 * t))
+   Yield Recovery: +18.2% harvest yield preserved.
+
+====================================================================================================
+7. AUDIO FEEDBACK & MULTILINGUAL KISAN VOICE ASSISTANT
+====================================================================================================
+Located at: `src/services/voiceService.ts` & `src/services/audioService.ts`
+
+----------------------------------------------------------------------------------------------------
+7.1 Web Speech Synthesis Logic
+----------------------------------------------------------------------------------------------------
+- Uses native browser `window.speechSynthesis` API for zero latency and offline capability.
+- Language Code Mapping:
+    - Hindi: `hi-IN` (Pacing: 0.92x for clear farmer comprehension, Pitch: 1.05)
+    - English: `en-IN` / `en-US` (Pacing: 1.0x, Pitch: 1.0)
+    - Hinglish: Vernacular colloquial agricultural phrasing.
+- Auto-cancels in-flight audio before starting new voice streams to prevent queue overlapping.
+
+----------------------------------------------------------------------------------------------------
+7.2 Live Audio Synthesizer (Web Audio API)
+----------------------------------------------------------------------------------------------------
+- Custom synthesized acoustic micro-clicks, chirps, and warning sonar pings using `AudioContext` sine/triangle oscillators (no heavy external mp3 asset downloads).
+
+====================================================================================================
+8. MOBILE-FIRST RESPONSIVE ARCHITECTURE & DESIGN TOKENS
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+8.1 Dedicated Multi-Page Routing Architecture
+----------------------------------------------------------------------------------------------------
+To eliminate horizontal scrolling clutter on mobile devices, the app utilizes clean state-driven multi-page views:
+- Tab 1: `dashboard`           -> Sentinel-2 Satellite Map & Zone Inspector
+- Tab 2: `camera_doctor`       -> MobileNet-v3 AI Leaf Pathology Scanner
+- Tab 3: `fertilizer_doctor`   -> Precision NPK Dosage & Pest Rx Prescriptions
+- Tab 4: `temporal_analytics`  -> 14-Day Recovery Curve & XAI Factor Attribution
+- Tab 5: `sensor_simulator`    -> IoT ESP32 Subsoil Telemetry & Live Stress Injector
+- Tab 6: `voice_assistant`     -> Kisan Voice Doctor with Spoken Hindi/English Audio
+
+----------------------------------------------------------------------------------------------------
+8.2 Mobile Bottom Dock & Left Slide-Over Drawer
+----------------------------------------------------------------------------------------------------
+- `MobileBottomNav.tsx`: 5-button fixed thumb-friendly bottom dock for one-handed mobile operation.
+- `MobileSideDrawer.tsx`: Full-featured slide-over drawer with plot selection, language picker, UI mode switcher, and printable dossier export.
+- `LeftSidebar.tsx`: Persistent desktop left navigation for large monitors.
+
+----------------------------------------------------------------------------------------------------
+8.3 High-Contrast Obsidian Forest Design System
+----------------------------------------------------------------------------------------------------
+Tailwind Color Palette:
+- `agri-950` : `#040D07` (Deep Obsidian Soil Background)
+- `agri-900` : `#07160D` (Elevated Card Background)
+- `agri-800` : `#0D2617` (Border & Surface Tint)
+- `emerald-400/500` : `#34D399` / `#10B981` (Agronomic Health & Primary CTAs)
+- `amber-400/500`   : `#FBBF24` / `#F59E0B` (Harvest Advisory & Voice Broadcast)
+- `cyan-400/500`    : `#22D3EE` / `#06B6D4` (Telemetry & Moisture Indicators)
+- `rose-400/500`    : `#F87171` / `#EF4444` (Hazard Composite & Pathogen Alerts)
+
+Typography:
+- Display Headings : `Outfit`, sans-serif
+- Body Text        : `Plus Jakarta Sans`, sans-serif
+- Telemetry & GPS  : `JetBrains Mono`, monospace
+
+====================================================================================================
+9. CODEBASE STRUCTURE & MODULE BREAKDOWN
+====================================================================================================
+d:\hackathon project\hara bhara planet\
+├── .gitignore                                # Ignores node_modules, dist, .env
+├── vercel.json                               # Vercel deployment & Vite SPA routing rules
+├── package.json                              # Dependencies & build scripts
+├── tsconfig.json                             # Strict TypeScript configuration
+├── tailwind.config.js                        # Precision agronomy color tokens
+├── vite.config.ts                            # Vite build optimizer
+├── index.html                                # HTML5 shell with Google Fonts
+├── public/
+│   ├── assets/                               # Ground truth pathology & satellite images
+│   └── bg-farmer-field.jpg                   # Optical field texture
+├── src/
+│   ├── main.tsx                              # Application bootstrap
+│   ├── App.tsx                               # Main orchestrator & Multi-Page Layout Shell
+│   ├── index.css                             # Glassmorphism & agronomic utility styles
+│   ├── types/
+│   │   └── groot.ts                          # Full TypeScript interfaces & domain types
+│   ├── services/
+│   │   ├── fusionEngine.ts                   # Tri-modal mathematical fusion engine
+│   │   ├── weatherService.ts                 # Open-Meteo realtime satellite weather API
+│   │   ├── voiceService.ts                   # Web Speech API Hindi/English narrator
+│   │   ├── audioService.ts                   # Web Audio API sound synthesizer
+│   │   └── mockData.ts                       # Calibrated ground-truth agronomic datasets
+│   └── components/
+│       ├── Navigation/
+│       │   ├── LeftSidebar.tsx               # Persistent desktop sidebar navigation
+│       │   ├── TopNavbar.tsx                 # Mobile-first top header with plot switcher
+│       │   ├── MobileBottomNav.tsx           # Thumb-friendly 5-button mobile bottom dock
+│       │   └── MobileSideDrawer.tsx          # Slide-over mobile drawer with full controls
+│       ├── Geospatial/
+│       │   ├── SatelliteFieldMap.tsx         # Sentinel-2 5x5 interactive parcel grid
+│       │   ├── ZoneDetailDrawer.tsx          # Zone inspector drawer with GPS & NDVI
+│       │   ├── SpectralLegend.tsx            # Scientific radiometric color scales
+│       │   └── FieldOverviewBanner.tsx       # Health score gauge & quick voice CTA
+│       ├── Diagnostics/
+│       │   ├── CropDiagnosticLab.tsx         # Live WebRTC camera viewfinder & upload
+│       │   └── LeafPathologyGallery.tsx      # Curated ground-truth disease samples
+│       ├── Agronomy/
+│       │   ├── FertilizerCalculator.tsx      # Acreage slider & N-P-K commercial bag math
+│       │   ├── PestRxCard.tsx                # Chemical & bio-control fungicide dosages
+│       │   └── YieldMaximizerSteps.tsx       # 4-stage yield enhancement roadmap
+│       ├── Analytics/
+│       │   ├── TemporalForecastChart.tsx     # 14-day interactive recovery forecast curve
+│       │   └── XaiAttributionMatrix.tsx      # 3-way SHAP factor attribution breakdown
+│       ├── Telemetry/
+│       │   ├── IoTSoilMeshDashboard.tsx      # Live subsurface sensor gauges & stress presets
+│       │   └── SensorPacketLog.tsx           # Simulated MQTT SSL telemetry terminal stream
+│       ├── Voice/
+│       │   └── KisanVoiceAssistant.tsx       # Vernacular Hindi/English tactile audio cards
+│       └── Modals/
+│           └── ExportDossierModal.tsx        # Printable field health audit report (PDF)
+
+====================================================================================================
+10. DEPLOYMENT, CI/CD & BUILD SPECIFICATION
+====================================================================================================
+- Build Tool: Vite 6 + TypeScript 5.6
+- Build Command: `npm run build` -> executes `tsc && vite build`
+- Production Assets: Emitted into `/dist` (HTML, JS bundles, CSS with GZIP compression)
+- CI/CD Platform: Vercel with GitHub automatic deployments triggered on `main` branch pushes.
+- Production URL: https://groot-ai-one.vercel.app
+
+====================================================================================================
+                                      END OF DOCUMENTATION
+====================================================================================================
