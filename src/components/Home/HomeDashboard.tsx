@@ -5,8 +5,7 @@ import {
   ArrowRight, 
   MapPin, 
   Sprout, 
-  Sparkles, 
-  ChevronRight
+  Sparkles
 } from 'lucide-react';
 import { 
   AppLanguage, 
@@ -309,35 +308,22 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       {/* ========================================================================= */}
       <div className="groot-card p-5 sm:p-6 bg-white space-y-4">
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-base sm:text-lg font-black text-[#1B2520] flex items-center gap-2">
-              <span>🗺️ {isHi ? 'मेरा खेत (Mera Khet - Satellite View)' : 'My Farm Satellite Map'}</span>
-            </h3>
-            <p className="text-xs text-[#66756D]">
-              📍 {currentPlot.locationName} • {currentPlot.areaHa ? `${Math.round(currentPlot.areaHa * 2.47)} Acres` : '2.3 Acres'}
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              audio.playClick();
-              onNavigateTab('my_farm');
-            }}
-            className="groot-btn-primary px-4 py-2.5 text-xs font-bold w-fit"
-          >
-            <span>{isHi ? 'खेत खोलें (Open Farm)' : 'Open Farm'}</span>
-            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-          </button>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-black text-[#1B2520] flex items-center gap-2">
+            <span>🗺️ {isHi ? 'मेरा खेत' : 'My Farm'}</span>
+          </h3>
+          <span className="text-xs font-semibold text-[#1F6B45] bg-[#EDF4EC] px-3 py-1 rounded-full border border-[#DDE6DD]">
+            Google Satellite View
+          </span>
         </div>
 
-        {/* Real Satellite Map View Canvas */}
+        {/* Real Satellite Map View Canvas with Boundary Polygon */}
         <div 
           onClick={() => {
             audio.playClick();
             onNavigateTab('my_farm');
           }}
-          className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden border border-[#DDE6DD] cursor-pointer group shadow-sm"
+          className="relative h-60 sm:h-72 w-full rounded-2xl overflow-hidden border border-[#DDE6DD] cursor-pointer group shadow-sm"
         >
           <img
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1400&auto=format&fit=crop&q=80"
@@ -345,28 +331,47 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
           />
 
-          {/* Polygon Field Boundary Overlay Box */}
-          <div className="absolute inset-8 sm:inset-14 border-2 border-dashed border-[#F2B84B] bg-[#1F6B45]/15 rounded-2xl flex items-center justify-center">
+          {/* Selected Farm Boundary Overlay */}
+          <div className="absolute inset-8 sm:inset-12 border-2 border-dashed border-[#F2B84B] bg-[#1F6B45]/15 rounded-2xl flex items-center justify-center">
             <div className="px-3.5 py-1.5 rounded-xl bg-white/95 text-[#1B2520] text-xs font-bold border border-[#DDE6DD] shadow-md flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#1F6B45] animate-ping" />
-              <span>{currentPlot.name} • {variety.varietyName || variety.cropName}</span>
+              <span>Selected Farm Boundary ({currentPlot.name})</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Clean Bottom Information Area */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#DDE6DD]">
+          <div>
+            <div className="font-bold text-base text-[#1B2520]">{currentPlot.name}</div>
+            <div className="text-xs text-[#66756D] flex items-center gap-2 mt-0.5">
+              <span>🌾 {variety.cropName} • {variety.varietyHindi || variety.varietyName || 'General'}</span>
+              <span>•</span>
+              <span>{currentPlot.areaHa ? `${(currentPlot.areaHa * 2.47).toFixed(1)} acres` : '2.3 acres'}</span>
             </div>
           </div>
 
-          {/* Bottom Card Inside Satellite Preview */}
-          <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#DDE6DD] flex items-center justify-between text-xs shadow-md">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{variety.iconEmoji || '🌾'}</span>
-              <div>
-                <div className="font-bold text-[#1B2520]">{currentPlot.name}</div>
-                <div className="text-[11px] text-[#66756D]">{variety.cropName} • {variety.varietyName || 'General'} • 2.3 acres</div>
-              </div>
-            </div>
-            <span className="text-[#1F6B45] font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              {isHi ? 'खेत नक्शा देखें' : 'Open Map'} <ChevronRight className="w-4 h-4" />
+          <div className="flex items-center justify-between sm:justify-end gap-3">
+            <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${
+              isHighRisk 
+                ? 'bg-[#C57A10]/15 text-[#C57A10] border-[#C57A10]/30'
+                : 'bg-[#2F7D4A]/15 text-[#2F7D4A] border-[#2F7D4A]/30'
+            }`}>
+              <span>{isHighRisk ? '🟡' : '🟢'}</span>
+              <span>{isHighRisk ? (isHi ? 'ध्यान दें' : 'Attention') : (isHi ? 'स्वस्थ (Healthy)' : 'Healthy')}</span>
             </span>
-          </div>
 
+            <button
+              onClick={() => {
+                audio.playClick();
+                onNavigateTab('my_farm');
+              }}
+              className="groot-btn-primary px-4 py-2 text-xs font-bold"
+            >
+              <span>{isHi ? 'खोलें' : 'Open'}</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </button>
+          </div>
         </div>
 
       </div>

@@ -1,5 +1,6 @@
 import { CropVariety } from '../types/crops';
 import { FarmPlot, FusionResult, RealtimeWeather, SensorTelemetry, FieldZone, LeafSample } from '../types/groot';
+import { GLOBAL_CROP_FAMILIES } from '../services/cropDatabase';
 
 export interface AssistantAppContext {
   activePlot?: FarmPlot;
@@ -16,7 +17,7 @@ export interface AssistantResponseOutput {
   text: string;
   speechText: string;
   suggestedAction?: {
-    type: 'OPEN_FARM' | 'OPEN_HEALTH' | 'OPEN_CAMERA' | 'CHANGE_CROP' | 'OPEN_SETTINGS' | 'OPEN_CROPS';
+    type: 'OPEN_FARM_MAP' | 'OPEN_CROP_HEALTH' | 'OPEN_CAMERA' | 'OPEN_CROP_SELECTOR' | 'OPEN_ADD_CROP';
     label: string;
   };
   followupSuggestions: string[];
@@ -30,33 +31,45 @@ export function generateTemplateResponse(intent: string, context: AssistantAppCo
   const telemetry = context.telemetry;
 
   const cropNameHi = crop?.cropHindi || crop?.cropName || 'फसल';
+  const cropNameEn = crop?.cropName || 'Crop';
   const varietyName = crop?.varietyHindi || crop?.varietyName || '';
-  const plotName = plot?.name || 'आपका खेत';
+  const plotName = plot?.name || 'North Field';
   const locationName = plot?.locationName || 'खेत';
+  const plotArea = plot?.areaHa ? (plot.areaHa * 2.47).toFixed(1) : '2.3';
+  const isAttention = (fusion?.riskPercentage ?? 0) > 40;
 
   switch (intent) {
     case 'GREETING': {
       return {
         text: `नमस्ते! मैं GROOT हूँ। आज आपकी ${cropNameHi} और खेत का क्या हाल जानना चाहते हैं?`,
         speechText: `नमस्ते! मैं ग्रूट हूँ। आज आपकी ${cropNameHi} की फसल और खेत के बारे में क्या जानना चाहते हैं?`,
-        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना है?', 'आज मौसम कैसा है?']
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना चाहिए?', 'आज मौसम कैसा है?']
       };
     }
 
     case 'ACTIVE_CROP': {
       if (!crop) {
         return {
-          text: 'अभी आपने कोई फसल नहीं चुनी है। "Choose Crop" बटन दबाकर फसल चुनें।',
+          text: 'अभी आपने कोई फसल नहीं चुनी है। फसल सूची खोलकर अपनी फसल चुनें।',
           speechText: 'अभी आपने कोई फसल नहीं चुनी है। कृपया फसल चुनें।',
-          suggestedAction: { type: 'OPEN_CROPS', label: '🌾 फसल चुनें' },
-          followupSuggestions: ['फसल कैसे जोड़ें?', 'GROOT कैसे इस्तेमाल करें?']
+          suggestedAction: { type: 'OPEN_CROP_SELECTOR', label: '🌾 फसल चुनें' },
+          followupSuggestions: ['नई फसल कैसे जोड़ूं?', 'GROOT कैसे इस्तेमाल करें?']
         };
       }
       return {
-        text: `अभी आपने ${cropNameHi} (${crop.cropName}) की फसल चुनी हुई है। ${varietyName ? `इसकी किस्म ${varietyName} है।` : 'किस्म अभी नहीं जोड़ी गई है।'} यह ${plotName} पर बोई गई है।`,
+        text: `अभी आपने ${cropNameHi} (${cropNameEn}) चुनी हुई है। ${varietyName ? `इसकी किस्म ${varietyName} है।` : ''} यह ${plotName} पर बोई गई है।`,
         speechText: `अभी आपने ${cropNameHi} की फसल चुनी हुई है। ${varietyName ? `इसकी किस्म ${varietyName} है।` : ''}`,
-        suggestedAction: { type: 'CHANGE_CROP', label: '🌾 फसल बदलें' },
-        followupSuggestions: ['मेरी फसल कैसी है?', 'किस्म बताओ', 'आज पानी देना है?']
+        suggestedAction: { type: 'OPEN_CROP_SELECTOR', label: '🌾 फसल बदलें' },
+        followupSuggestions: ['मेरी फसल कैसी है?', 'मेरी variety क्या है?', 'आज पानी देना चाहिए?']
+      };
+    }
+
+    case 'LAST_ADDED_CROP': {
+      return {
+        text: `आपने हाल ही में ${cropNameHi} (${varietyName || 'General'}) फसल जोड़ी है जो ${plotName} में 2.3 एकड़ में है।`,
+        speechText: `आपने हाल ही में ${cropNameHi} की फसल जोड़ी है।`,
+        suggestedAction: { type: 'OPEN_CROP_SELECTOR', label: '🌾 फसलें देखें' },
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना चाहिए?']
       };
     }
 
@@ -65,7 +78,7 @@ export function generateTemplateResponse(intent: string, context: AssistantAppCo
         return {
           text: `आपकी फसल ${cropNameHi} है, लेकिन अभी कोई विशेष किस्म (variety) दर्ज नहीं है। आप My Crops में जाकर किस्म चुन सकते हैं।`,
           speechText: `आपकी फसल ${cropNameHi} है, किस्म अभी दर्ज नहीं है।`,
-          suggestedAction: { type: 'OPEN_CROPS', label: '🌾 किस्म चुनें' },
+          suggestedAction: { type: 'OPEN_CROP_SELECTOR', label: '🌾 किस्म चुनें' },
           followupSuggestions: ['मेरी फसल कैसी है?', 'फसल बदलें']
         };
       }
@@ -76,133 +89,202 @@ export function generateTemplateResponse(intent: string, context: AssistantAppCo
       };
     }
 
-    case 'CROP_HEALTH': {
-      if (!fusion) {
-        return {
-          text: `आपकी ${cropNameHi} की रिपोर्ट तैयार हो रही है। कृपया एक बार Crop Health पेज देखें।`,
-          speechText: 'फसल की नई स्वास्थ्य रिपोर्ट तैयार हो रही है।',
-          suggestedAction: { type: 'OPEN_HEALTH', label: '❤️ फसल सेहत देखें' },
-          followupSuggestions: ['आज पानी देना है?', 'मौसम कैसा है?']
-        };
-      }
+    case 'CROP_CATEGORY': {
+      const cat = crop?.category === 'cereal' ? 'अनाज (रबी फसल)' : crop?.category === 'pulse' ? 'दलहन फसल' : 'मुख्य कृषि फसल';
+      return {
+        text: `${cropNameHi} एक प्रमुख ${cat} है। इसे उचित नमी और संतुलित खाद की आवश्यकता होती है।`,
+        speechText: `${cropNameHi} एक प्रमुख ${cat} है।`,
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज मौसम कैसा है?']
+      };
+    }
 
-      if (fusion.riskPercentage > 50) {
+    case 'AVAILABLE_CROPS':
+    case 'MAJOR_CROPS': {
+      const names = GLOBAL_CROP_FAMILIES.slice(0, 5).map(f => f.nameHindi).join(', ');
+      return {
+        text: `GROOT में सभी मुख्य फसलें उपलब्ध हैं: ${names} और कई अन्य। आप सीधे My Crops में जाकर कोई भी फसल चुन सकते हैं।`,
+        speechText: `ग्रूट में गेहूँ, धान, मक्का, सरसों, चना समेत सभी मुख्य फसलें उपलब्ध हैं।`,
+        suggestedAction: { type: 'OPEN_CROP_SELECTOR', label: '🌾 फसल सूची देखें' },
+        followupSuggestions: ['मेरी फसल कौन सी है?', 'नई फसल कैसे जोड़ूं?']
+      };
+    }
+
+    case 'CROP_HEALTH': {
+      if (isAttention) {
         return {
-          text: `फसल कुल मिलाकर ठीक है, लेकिन एक हिस्से में थोड़ा तनाव और नमी की कमी दिखाई दे रही है। उस हिस्से को खेत में एक बार जाकर देख लेना अच्छा रहेगा।`,
-          speechText: `फसल कुल मिलाकर ठीक है, लेकिन एक हिस्से में थोड़ा तनाव दिखाई दे रहा है। उस हिस्से को खेत में एक बार जाकर देख लें।`,
-          suggestedAction: { type: 'OPEN_HEALTH', label: '❤️ पूरी हेल्थ रिपोर्ट देखें' },
-          followupSuggestions: ['आज पानी देना है?', 'पत्ती की फोटो जांचें', 'मेरा खेत दिखाओ']
+          text: `आपकी ${cropNameHi} की फसल कुल मिलाकर ठीक है, लेकिन एक हिस्से पर ध्यान देने की जरूरत है। आप चाहें तो मैं वह हिस्सा मैप पर दिखा सकता हूँ।`,
+          speechText: `आपकी ${cropNameHi} की फसल कुल मिलाकर ठीक है, लेकिन एक हिस्से पर ध्यान देने की जरूरत है।`,
+          suggestedAction: { type: 'OPEN_CROP_HEALTH', label: '❤️ फसल सेहत देखें' },
+          followupSuggestions: ['फसल खराब क्यों हो रही है?', 'आज पानी देना चाहिए?', 'मेरा खेत दिखाओ']
         };
       }
 
       return {
-        text: `आपकी ${cropNameHi} की फसल अभी बहुत अच्छी और हरी-भरी लग रही है (स्वास्थ्य स्कोर ${fusion.healthScore}/100)। फिलहाल कोई बड़ी बीमारी या तनाव नहीं दिख रहा।`,
-        speechText: `आपकी ${cropNameHi} की फसल अभी बहुत अच्छी लग रही है। फिलहाल कोई बड़ी समस्या नहीं दिख रही।`,
-        suggestedAction: { type: 'OPEN_HEALTH', label: '❤️ पूरी रिपोर्ट देखें' },
-        followupSuggestions: ['आज पानी देना है?', 'आज मौसम कैसा है?', 'आज क्या काम करें?']
+        text: `आपकी ${cropNameHi} की फसल अभी अच्छी लग रही है। फिलहाल कोई बड़ी समस्या नहीं दिख रही।`,
+        speechText: `आपकी ${cropNameHi} की फसल अभी अच्छी लग रही है। फिलहाल कोई बड़ी समस्या नहीं दिख रही।`,
+        suggestedAction: { type: 'OPEN_CROP_HEALTH', label: '❤️ फसल सेहत देखें' },
+        followupSuggestions: ['आज पानी देना चाहिए?', 'आज मौसम कैसा है?', 'आज मुझे क्या करना चाहिए?']
+      };
+    }
+
+    case 'HEALTH_REASON': {
+      return {
+        text: `खेत के उत्तरी भाग में मिट्टी की नमी थोड़ी कम है। समय पर हल्की सिंचाई करने से फसल पूरी स्वस्थ हो जाएगी।`,
+        speechText: `खेत के एक हिस्से में नमी कम है। समय पर सिंचाई करने से फसल स्वस्थ हो जाएगी।`,
+        suggestedAction: { type: 'OPEN_CROP_HEALTH', label: '❤️ हेल्थ रिपोर्ट देखें' },
+        followupSuggestions: ['आज पानी देना चाहिए?', 'आज मौसम कैसा है?']
       };
     }
 
     case 'WATER_STATUS':
     case 'IRRIGATION_HELP': {
       const moisture = telemetry?.soilMoisture ?? 55;
-      if (moisture < 30) {
+      if (moisture < 35) {
         return {
-          text: `मिट्टी में अभी नमी ${moisture.toFixed(0)}% है, जो कम है। कल सुबह 6 से 9 बजे के बीच खेत में हल्की सिंचाई कर लेना अच्छा रहेगा।`,
-          speechText: `मिट्टी में अभी नमी कम है। कल सुबह हल्की सिंचाई कर लेना अच्छा रहेगा।`,
-          suggestedAction: { type: 'OPEN_HEALTH', label: '💧 पानी स्थिति देखें' },
+          text: `मिट्टी की नमी अभी थोड़ी कम (${moisture.toFixed(0)}%) है। कल सुबह 6 से 9 बजे के बीच खेत में हल्की सिंचाई कर लेना अच्छा रहेगा।`,
+          speechText: `मिट्टी की नमी थोड़ी कम है। कल सुबह हल्की सिंचाई कर लेना अच्छा रहेगा।`,
+          suggestedAction: { type: 'OPEN_CROP_HEALTH', label: '💧 पानी स्थिति देखें' },
           followupSuggestions: ['आज मौसम कैसा है?', 'मेरी फसल कैसी है?']
         };
       }
       return {
-        text: `मिट्टी में अभी नमी ${moisture.toFixed(0)}% है, जो संतुलित है। तुरंत पानी देने की जरूरत नहीं लग रही। मौसम भी ध्यान में रखें।`,
-        speechText: `मिट्टी में अभी नमी ठीक है, तुरंत पानी देने की जरूरत नहीं लग रही।`,
+        text: `मिट्टी में अभी नमी ${moisture.toFixed(0)}% है जो पर्याप्त है। आज तुरंत पानी देने की जरूरत नहीं है।`,
+        speechText: `मिट्टी में अभी नमी ठीक है, आज पानी देने की जरूरत नहीं है।`,
         followupSuggestions: ['आज मौसम कैसा है?', 'मेरी फसल कैसी है?']
       };
     }
 
     case 'WEATHER':
-    case 'RAIN_CHANCE':
     case 'TEMPERATURE': {
       const temp = weather?.temperature ?? 28;
       const cond = weather?.conditionHindi ?? 'साफ़ धूप';
       return {
-        text: `${locationName} में आज तापमान ${temp}°C है और मौसम ${cond} बना हुआ है। बारिश की संभावना बहुत कम है, इसलिए खाद डालने व छिड़काव के लिए दिन अनुकूल है।`,
-        speechText: `${locationName} में आज तापमान ${temp} डिग्री सेल्सियस है और मौसम ${cond} है। छिड़काव के लिए दिन अनुकूल है।`,
-        followupSuggestions: ['आज पानी देना है?', 'मेरी फसल कैसी है?']
+        text: `${locationName} में आज तापमान ${temp}°C है और मौसम ${cond} बना हुआ है।`,
+        speechText: `${locationName} में आज तापमान ${temp} डिग्री सेल्सियस है और मौसम ${cond} है।`,
+        followupSuggestions: ['बारिश होगी?', 'आज पानी देना चाहिए?', 'मेरी फसल कैसी है?']
+      };
+    }
+
+    case 'RAIN_CHANCE': {
+      const rain = weather?.rainMm ?? 0;
+      if (rain > 1) {
+        return {
+          text: `आज बारिश की संभावना है (${rain} mm बारिश का अनुमान)। इसलिए आज सिंचाई और छिड़काव रोक दें।`,
+          speechText: `आज बारिश की संभावना है। इसलिए सिंचाई और छिड़काव रोक दें।`,
+          followupSuggestions: ['आज तापमान कितना है?', 'मेरी फसल कैसी है?']
+        };
+      }
+      return {
+        text: `आज बारिश की संभावना नहीं है, मौसम साफ़ रहेगा। खेत में काम करने के लिए दिन अनुकूल है।`,
+        speechText: `आज बारिश की संभावना नहीं है, मौसम साफ़ रहेगा।`,
+        followupSuggestions: ['आज तापमान कितना है?', 'आज पानी देना चाहिए?']
       };
     }
 
     case 'FARM_LOCATION':
     case 'OPEN_FARM': {
       return {
-        text: `आपका खेत ${locationName} में स्थित है। कुल क्षेत्रफल ${plot?.areaHa ?? 2.3} हेक्टेयर है। आइए सैटेलाइट मैप पर आपका खेत देखते हैं।`,
-        speechText: `आपका खेत ${locationName} में स्थित है। सैटेलाइट मैप खोला जा रहा है।`,
-        suggestedAction: { type: 'OPEN_FARM', label: '🗺️ खेत का नक्शा खोलें' },
-        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना है?']
+        text: `आपका खेत ${locationName} में स्थित है। यह रहा आपके खेत का सैटेलाइट नक्शा।`,
+        speechText: `आपका खेत ${locationName} में स्थित है। सैटेलाइट नक्शा खोला जा रहा है।`,
+        suggestedAction: { type: 'OPEN_FARM_MAP', label: '🗺️ खेत का नक्शा खोलें' },
+        followupSuggestions: ['मेरा खेत कितना बड़ा है?', 'मेरी फसल कैसी है?']
       };
     }
 
-    case 'OPEN_HEALTH': {
+    case 'FARM_AREA': {
       return {
-        text: `Crop Health पेज खोला जा रहा है। यहाँ आप फसल की सेहत, पानी, कीट व सैटेलाइट डेटा देख सकते हैं।`,
-        speechText: `क्रॉप हेल्थ पेज खोला जा रहा है।`,
-        suggestedAction: { type: 'OPEN_HEALTH', label: '❤️ फसल सेहत खोलें' },
-        followupSuggestions: ['मेरी फसल कैसी है?', 'पानी की स्थिति']
+        text: `आपके खेत का कुल क्षेत्रफल लगभग ${plotArea} एकड़ (${plot?.areaHa ?? 0.9} हेक्टेयर) है।`,
+        speechText: `आपके खेत का क्षेत्रफल लगभग ${plotArea} एकड़ है।`,
+        suggestedAction: { type: 'OPEN_FARM_MAP', label: '🗺️ खेत देखें' },
+        followupSuggestions: ['मेरा खेत कहाँ है?', 'मेरी फसल कौन सी है?']
       };
     }
 
-    case 'CHANGE_CROP':
-    case 'ADD_CROP': {
+    case 'ADD_CROP':
+    case 'HOW_TO_ADD_CROP': {
       return {
-        text: `आप My Crops पेज से आसानी से फसल बदल सकते हैं या नई किस्म जोड़ सकते हैं।`,
-        speechText: `फसल सूची खोली जा रही है।`,
-        suggestedAction: { type: 'OPEN_CROPS', label: '🌾 फसलें देखें' },
-        followupSuggestions: ['मेरी फसल कौन सी है?', 'GROOT कैसे काम करता है?']
+        text: `नई फसल जोड़ने के लिए My Crops पेज पर "+ फसल जोड़ें" बटन दबाएं और अपनी फसल चुनें।`,
+        speechText: `फसल सूची खोली जा रही है जहाँ से आप नई फसल जोड़ सकते हैं।`,
+        suggestedAction: { type: 'OPEN_ADD_CROP', label: '🌾 नई फसल जोड़ें' },
+        followupSuggestions: ['मेरी फसल कौन सी है?', 'GROOT कैसे इस्तेमाल करें?']
+      };
+    }
+
+    case 'CHANGE_CROP': {
+      return {
+        text: `फसल बदलने के लिए नीचे दिया गया बटन दबाएं और अपनी पसंदीदा फसल चुनें।`,
+        speechText: `फसल बदलने के लिए स्क्रीन खोली जा रही है।`,
+        suggestedAction: { type: 'OPEN_CROP_SELECTOR', label: '🌾 फसल बदलें' },
+        followupSuggestions: ['मेरी फसल कौन सी है?', 'मेरी variety क्या है?']
       };
     }
 
     case 'TAKE_PHOTO':
     case 'DISEASE_STATUS': {
       return {
-        text: `यदि फसल की पत्ती पर पीले या भूरे धब्बे दिखाई दे रहे हैं, तो कैमरा खोलकर पत्ती की साफ़ फोटो लें। GROOT AI 5 सेकंड में बीमारी पहचान लेगा।`,
+        text: `पत्ती की साफ़ फोटो लेकर बीमारी जांचने के लिए कैमरा खोलें। GROOT 5 सेकंड में बीमारी पहचान लेगा।`,
         speechText: `पत्ती की फोटो लेने के लिए कैमरा खोला जा रहा है।`,
         suggestedAction: { type: 'OPEN_CAMERA', label: '📷 कैमरा / फोटो जांच' },
-        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना है?']
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना चाहिए?']
       };
     }
 
-    case 'WHAT_TO_DO': {
+    case 'TODAY_ACTIONS': {
       return {
-        text: `आज तीन मुख्य बातों का ध्यान रखें:\n1. खेत के उत्तरी हिस्से में नमी जांचें।\n2. मौसम साफ़ है, यूरिया या खाद की खुराक सुबह के समय दें।\n3. यदि किसी पौधे पर कीड़े दिखें तो GROOT कैमरे से फोटो लें।`,
-        speechText: `आज तीन मुख्य बातों का ध्यान रखें। पहला, खेत में नमी जांचें। दूसरा, सुबह के समय खाद दें। तीसरा, किसी पत्ते पर धब्बे दिखें तो फोटो लें।`,
-        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना है?', 'मौसम कैसा है?']
+        text: `आज के मुख्य काम:\n1. खेत में नमी की स्थिति जांचें।\n2. मौसम साफ़ है, सामान्य देखभाल जारी रखें।\n3. पत्तों पर धब्बे दिखें तो फोटो से जांच करें।`,
+        speechText: `आज के मुख्य काम: पहला, खेत में नमी जांचें। दूसरा, मौसम साफ़ है, सामान्य देखभाल रखें। तीसरा, पत्तों पर धब्बे दिखें तो फोटो लें।`,
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना चाहिए?', 'आज मौसम कैसा है?']
+      };
+    }
+
+    case 'LATEST_ALERT': {
+      return {
+        text: `अभी कोई गंभीर खतरा नहीं है। मिट्टी की नमी और सामान्य मौसम पर ध्यान बनाए रखें।`,
+        speechText: `अभी कोई गंभीर खतरा नहीं है। सब सामान्य है।`,
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज मौसम कैसा है?']
+      };
+    }
+
+    case 'GROWTH_STATUS': {
+      return {
+        text: `आपकी फसल सामान्य गति से बढ़ रही है। उचित समय पर खाद और पानी देने से 22-25 क्विंटल प्रति एकड़ पैदावार की उम्मीद है।`,
+        speechText: `आपकी फसल सामान्य गति से बढ़ रही है। पैदावार अच्छी होने की उम्मीद है।`,
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना चाहिए?']
       };
     }
 
     case 'HOW_TO_USE_GROOT':
     case 'HELP': {
       return {
-        text: `GROOT इस्तेमाल करना बहुत सरल है:\n1. पहले अपना खेत मैप पर चुनें।\n2. अपनी फसल और किस्म चुनें।\n3. Home स्क्रीन पर रोज़ का हाल देखें।\nकोई भी सवाल हो तो मुझसे बोलकर पूछें!`,
-        speechText: `ग्रूट इस्तेमाल करना बहुत सरल है। पहले मैप पर खेत चुनें, फिर फसल चुनें। कोई भी सवाल हो तो बोलकर पूछें।`,
-        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना है?', 'मेरा खेत दिखाओ']
+        text: `GROOT इस्तेमाल करना बहुत सरल है:\n1. 📍 अपना खेत चुनें\n2. 🌾 फसल और किस्म चुनें\n3. 🎙️ कोई भी सवाल बोलकर पूछें\nGROOT आपको आसान भाषा में सब बता देगा!`,
+        speechText: `ग्रूट इस्तेमाल करना बहुत सरल है। खेत चुनें, फसल चुनें, और कोई भी सवाल मुझसे बोलकर पूछें।`,
+        followupSuggestions: ['मेरी फसल कैसी है?', 'मेरा खेत दिखाओ', 'आज मौसम कैसा है?']
+      };
+    }
+
+    case 'HOW_TO_SELECT_FARM': {
+      return {
+        text: `खेत या लोकेशन बदलने के लिए My Farm पेज पर जाकर "📍 वर्तमान स्थान लें" या गाँव का नाम खोजें।`,
+        speechText: `लोकेशन बदलने के लिए खेत का नक्शा खोला जा रहा है।`,
+        suggestedAction: { type: 'OPEN_FARM_MAP', label: '🗺️ खेत नक्शा खोलें' },
+        followupSuggestions: ['मेरा खेत कहाँ है?', 'मेरा खेत कितना बड़ा है?']
       };
     }
 
     case 'THANK_YOU': {
       return {
-        text: 'आपका बहुत-बहुत धन्यवाद! अच्छी फसल और खुशहाल खेती के लिए GROOT हमेशा आपके साथ है। 🙏',
+        text: 'आपका बहुत धन्यवाद! अच्छी फसल और खुशहाल खेती के लिए GROOT हमेशा आपके साथ है। 🙏',
         speechText: 'आपका धन्यवाद! खुशहाल खेती के लिए ग्रूट हमेशा आपके साथ है।',
-        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना है?']
+        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना चाहिए?']
       };
     }
 
     case 'UNKNOWN':
     default: {
       return {
-        text: `माफ कीजिए, मैं यह सवाल अभी ठीक से समझ नहीं पाया। आप फसल की सेहत, पानी, मौसम, अपनी फसल या खेत के बारे में पूछ सकते हैं।`,
-        speechText: `माफ कीजिए, मैं यह सवाल ठीक से समझ नहीं पाया। आप फसल की सेहत, पानी, मौसम या खेत के बारे में पूछ सकते हैं।`,
-        followupSuggestions: ['मेरी फसल कैसी है?', 'आज पानी देना है?', 'मेरा खेत दिखाओ', 'आज क्या काम करें?']
+        text: `माफ कीजिए, मैं यह सवाल ठीक से समझ नहीं पाया। आप अपनी फसल, खेत, पानी, मौसम या crop health के बारे में पूछ सकते हैं।`,
+        speechText: `माफ कीजिए, मैं यह सवाल ठीक से समझ नहीं पाया। आप अपनी फसल, खेत, पानी या मौसम के बारे में पूछ सकते हैं।`,
+        followupSuggestions: ['मेरी फसल कैसी है?', 'मेरा खेत दिखाओ', 'आज मौसम कैसा है?']
       };
     }
   }

@@ -1,20 +1,27 @@
 import { GROOT_INTENTS, AssistantIntent } from '../knowledge/assistantIntents';
 import { generateTemplateResponse, AssistantAppContext, AssistantResponseOutput } from '../knowledge/responseTemplates';
 
-// Normalize Hindi, Hinglish, and English text
+// Clean text for matching Hindi, Hinglish, and English
 export function normalizeQuery(raw: string): string {
   if (!raw) return '';
   return raw
     .toLowerCase()
     .trim()
-    .replace(/[?,।!.;:()]/g, ' ')
+    .replace(/[?,।!.;:()—_]/g, ' ')
     .replace(/\s+/g, ' ');
 }
 
-// Token scoring & fuzzy matcher for farmer queries
+// Token scoring & multi-tier matcher
 export function matchIntent(userQuery: string): { intent: AssistantIntent; score: number } {
   const normQuery = normalizeQuery(userQuery);
   const queryTokens = normQuery.split(' ').filter(t => t.length > 0);
+
+  if (!normQuery) {
+    return {
+      intent: { intent: 'UNKNOWN', category: 'general', examples: [], keywords: [] },
+      score: 0
+    };
+  }
 
   let bestIntent: AssistantIntent | null = null;
   let bestScore = 0;
@@ -22,28 +29,32 @@ export function matchIntent(userQuery: string): { intent: AssistantIntent; score
   for (const item of GROOT_INTENTS) {
     let score = 0;
 
-    // Exact example match
+    // 1. Exact Example Match (High Priority)
     for (const ex of item.examples) {
       const normEx = normalizeQuery(ex);
       if (normQuery === normEx) {
-        return { intent: item, score: 1.0 };
+        return { intent: item, score: 2.0 };
       }
-      if (normQuery.includes(normEx) || normEx.includes(normQuery)) {
-        score += 0.6;
+      if (normQuery.includes(normEx)) {
+        score += 1.2;
+      } else if (normEx.includes(normQuery) && normQuery.length > 4) {
+        score += 0.8;
       }
     }
 
-    // Keyword matching
+    // 2. Keyword Match
     for (const kw of item.keywords) {
       const normKw = normalizeQuery(kw);
       if (normQuery.includes(normKw)) {
-        score += 0.4;
+        score += 0.6;
       }
       for (const token of queryTokens) {
         if (token === normKw) {
           score += 0.5;
-        } else if (token.includes(normKw) || normKw.includes(token)) {
-          if (normKw.length > 3) score += 0.25;
+        } else if (token.length > 3 && normKw.length > 3) {
+          if (token.includes(normKw) || normKw.includes(token)) {
+            score += 0.3;
+          }
         }
       }
     }
@@ -54,7 +65,8 @@ export function matchIntent(userQuery: string): { intent: AssistantIntent; score
     }
   }
 
-  if (!bestIntent || bestScore < 0.3) {
+  // Fallback to unknown if confidence is below threshold
+  if (!bestIntent || bestScore < 0.35) {
     const unknownIntent: AssistantIntent = {
       intent: 'UNKNOWN',
       category: 'general',

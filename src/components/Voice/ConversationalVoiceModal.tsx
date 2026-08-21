@@ -260,9 +260,10 @@ export const ConversationalVoiceModal: React.FC<ConversationalVoiceModalProps> =
                     realVoiceService.stop();
                     onClose();
                     const action = currentResponse.suggestedAction!.type;
-                    if (action === 'OPEN_FARM') onNavigateTab('my_farm');
-                    else if (action === 'OPEN_HEALTH') onNavigateTab('crop_health');
-                    else if (action === 'OPEN_CROPS') onNavigateTab('my_crops');
+                    if (action === 'OPEN_FARM_MAP') onNavigateTab('my_farm');
+                    else if (action === 'OPEN_CROP_HEALTH') onNavigateTab('crop_health');
+                    else if (action === 'OPEN_ADD_CROP') onNavigateTab('my_crops');
+                    else if (action === 'OPEN_CROP_SELECTOR') onNavigateTab('my_crops');
                     else if (action === 'OPEN_CAMERA') onNavigateTab('crop_health');
                   }}
                   className="groot-btn-primary px-4 py-2 text-xs font-bold w-fit shadow-sm"

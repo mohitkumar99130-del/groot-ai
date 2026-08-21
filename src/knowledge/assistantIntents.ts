@@ -1,7 +1,7 @@
 export interface AssistantIntent {
   intent: string;
   category: 'crop' | 'health' | 'water' | 'weather' | 'farm' | 'navigation' | 'help' | 'general';
-  action?: 'OPEN_FARM' | 'OPEN_HEALTH' | 'OPEN_CAMERA' | 'CHANGE_CROP' | 'OPEN_SETTINGS' | 'OPEN_CROPS';
+  action?: 'OPEN_FARM_MAP' | 'OPEN_CROP_HEALTH' | 'OPEN_CAMERA' | 'OPEN_CROP_SELECTOR' | 'OPEN_ADD_CROP';
   examples: string[];
   keywords: string[];
 }
@@ -19,9 +19,10 @@ export const GROOT_INTENTS: AssistantIntent[] = [
       'sat sri akal',
       'radhe radhe',
       'ram ram',
-      'pranam'
+      'pranam',
+      'kem cho'
     ],
-    keywords: ['namaste', 'hello', 'hi', 'pranam', 'ram ram', 'radhe', 'sat sri akal', 'kaisa', 'kem cho']
+    keywords: ['namaste', 'hello', 'hi', 'pranam', 'ram ram', 'radhe', 'sat sri akal', 'kem cho']
   },
   {
     intent: 'ACTIVE_CROP',
@@ -33,9 +34,23 @@ export const GROOT_INTENTS: AssistantIntent[] = [
       'kaunsi fasal hai',
       'current crop',
       'crop name batao',
-      'meri fasal ka naam'
+      'meri fasal ka naam',
+      'maine kaunsi crop select ki hai',
+      'active crop'
     ],
-    keywords: ['kaunsi fasal', 'mera crop', 'active crop', 'current crop', 'fasal ka naam', 'crop name']
+    keywords: ['kaunsi fasal', 'mera crop', 'active crop', 'current crop', 'fasal ka naam', 'crop name', 'meri fasal']
+  },
+  {
+    intent: 'LAST_ADDED_CROP',
+    category: 'crop',
+    examples: [
+      'मैंने कौन सी crop add की है',
+      'मेरी नई crop कौन सी है',
+      'meri new crop konsi hai',
+      'aakhiri fasal kaun si jodi',
+      'last added crop'
+    ],
+    keywords: ['add ki hai', 'new crop', 'nayi fasal', 'last added', 'aakhiri fasal']
   },
   {
     intent: 'CROP_VARIETY',
@@ -47,27 +62,65 @@ export const GROOT_INTENTS: AssistantIntent[] = [
       'meri kisam kya hai',
       'किस्म बताओ',
       'kisam kaunsi hai',
-      'variety name'
+      'variety name',
+      'kaunsi variety boi hai'
     ],
-    keywords: ['variety', 'kisam', 'kism', 'seed variety', 'kaunsi variety']
+    keywords: ['variety', 'kisam', 'kism', 'seed variety', 'kaunsi variety', 'beej']
+  },
+  {
+    intent: 'CROP_CATEGORY',
+    category: 'crop',
+    examples: [
+      'गेहूँ किस तरह की फसल है',
+      'crop category kya hai',
+      'ye rabi fasal hai ya kharif',
+      'fasal ka varg',
+      'anaj hai ya daal'
+    ],
+    keywords: ['kis tarah ki', 'category', 'varg', 'rabi', 'kharif', 'anaj', 'dal']
+  },
+  {
+    intent: 'AVAILABLE_CROPS',
+    category: 'crop',
+    examples: [
+      'कौन-कौन सी फसल available है',
+      'app me kaunsi fasle hain',
+      'available crops',
+      'sari faslo ki list',
+      'all crops in groot'
+    ],
+    keywords: ['available', 'kaun kaun si', 'all crops', 'list', 'fasle available']
+  },
+  {
+    intent: 'MAJOR_CROPS',
+    category: 'crop',
+    examples: [
+      'major crops कौन सी हैं',
+      'mukhya fasle kaun si hain',
+      'pramukh fasal',
+      'main crops',
+      'top crops'
+    ],
+    keywords: ['major crops', 'mukhya fasal', 'main crop', 'pramukh', 'top crops']
   },
   {
     intent: 'CROP_HEALTH',
     category: 'health',
-    action: 'OPEN_HEALTH',
+    action: 'OPEN_CROP_HEALTH',
     examples: [
       'मेरी फसल कैसी है',
       'फसल ठीक है',
-      'crop health',
+      'crop health kya hai',
       'fasal ka haal batao',
       'mera crop healthy hai',
       'खेती कैसी चल रही है',
       'meri fasal thik hai',
-      'gehu theek hai',
+      'गेहूँ ठीक है',
       'health report',
-      'fasal ki sehat'
+      'fasal ki sehat',
+      'meri fasal me koi dikkat hai'
     ],
-    keywords: ['health', 'sehat', 'kaisi hai', 'thik hai', 'haal batao', 'bimari', 'vitality', 'swasthya']
+    keywords: ['health', 'sehat', 'kaisi hai', 'thik hai', 'haal batao', 'bimari', 'dikkat', 'swasthya', 'vitality']
   },
   {
     intent: 'HEALTH_REASON',
@@ -75,18 +128,20 @@ export const GROOT_INTENTS: AssistantIntent[] = [
     examples: [
       'फसल खराब क्यों हो रही है',
       'health kam kyu hai',
-      'kya bimari hai',
+      'kya dikkat hai',
       'yellow leaves kyu hai',
       'patte pile kyu hai',
-      'problem kya hai'
+      'problem kya hai',
+      'sehat me kami ka karan'
     ],
-    keywords: ['kyu', 'reason', 'problem', 'pila', 'kamzor', 'kharab']
+    keywords: ['kyu', 'reason', 'problem', 'pila', 'kamzor', 'kharab', 'karan', 'dikkat']
   },
   {
     intent: 'WATER_STATUS',
     category: 'water',
     examples: [
       'पानी देना है',
+      'आज पानी देना चाहिए',
       'आज सिंचाई करनी है',
       'fasal ko pani chahiye',
       'water status',
@@ -126,11 +181,11 @@ export const GROOT_INTENTS: AssistantIntent[] = [
     intent: 'RAIN_CHANCE',
     category: 'weather',
     examples: [
-      'बारिश होगी क्या',
+      'बारिश होगी',
       'aaj barish hogi',
       'rain chance',
       'kya barish aane wali hai',
-      'barsat hogi'
+      'barsat hogi kya'
     ],
     keywords: ['barish', 'barsat', 'rain', 'precipitation', 'pani barsega']
   },
@@ -139,6 +194,7 @@ export const GROOT_INTENTS: AssistantIntent[] = [
     category: 'weather',
     examples: [
       'तापमान कितना है',
+      'temperature kitna hai',
       'temperature kya hai',
       'aaj kitni garmi hai',
       'kitna temperature hai'
@@ -148,74 +204,75 @@ export const GROOT_INTENTS: AssistantIntent[] = [
   {
     intent: 'FARM_LOCATION',
     category: 'farm',
-    action: 'OPEN_FARM',
+    action: 'OPEN_FARM_MAP',
     examples: [
-      'मेरा खेत कहां है',
+      'मेरा खेत कहाँ है',
       'farm dikhao',
       'mera khet dikhao',
       'location batao',
-      'map kholo',
-      'satellite map dikhao',
-      'khet ka naksha'
+      'satellite map kholo',
+      'khet ka naksha',
+      'map par mera khet'
     ],
-    keywords: ['khet', 'farm', 'map', 'naksha', 'location', 'satellite', 'plot', 'jagah']
+    keywords: ['khet', 'farm', 'map', 'naksha', 'location', 'satellite', 'plot', 'jagah', 'kahan hai']
   },
   {
     intent: 'OPEN_FARM',
     category: 'navigation',
-    action: 'OPEN_FARM',
+    action: 'OPEN_FARM_MAP',
     examples: [
       'farm map kholo',
       'open farm',
       'mera khet page',
-      'map par jao'
+      'map par jao',
+      'satellite map खोलो'
     ],
-    keywords: ['open farm', 'khet kholo', 'map kholo']
+    keywords: ['open farm', 'khet kholo', 'map kholo', 'satellite map']
   },
   {
-    intent: 'OPEN_HEALTH',
-    category: 'navigation',
-    action: 'OPEN_HEALTH',
+    intent: 'FARM_AREA',
+    category: 'farm',
     examples: [
-      'health dikhao',
-      'crop health kholo',
-      'analysis dikhao',
-      'फसल की रिपोर्ट दिखाओ',
-      'open health'
+      'मेरा खेत कितना बड़ा है',
+      'khet ka area kitna hai',
+      'total acres kitne hain',
+      'khet ka size batao',
+      'farm area'
     ],
-    keywords: ['open health', 'health kholo', 'report dikhao', 'sehat kholo']
-  },
-  {
-    intent: 'CHANGE_CROP',
-    category: 'navigation',
-    action: 'OPEN_CROPS',
-    examples: [
-      'crop change karna hai',
-      'फसल बदलनी है',
-      'dusri fasal select karo',
-      'change crop',
-      'naye fasal chuno'
-    ],
-    keywords: ['change crop', 'fasal badlo', 'dusri fasal', 'crop badalna']
+    keywords: ['kitna bada', 'area', 'acres', 'hectare', 'size', 'bigha']
   },
   {
     intent: 'ADD_CROP',
     category: 'navigation',
-    action: 'OPEN_CROPS',
+    action: 'OPEN_ADD_CROP',
     examples: [
+      'नई फसल कैसे जोड़ूं',
       'nayee fasal jodein',
       'add crop',
       'khet me nayi fasal lagayi hai',
       'add new crop'
     ],
-    keywords: ['add crop', 'nayi fasal', 'fasal jodo', 'new crop']
+    keywords: ['add crop', 'nayi fasal', 'fasal jodo', 'new crop', 'kaise jodu']
+  },
+  {
+    intent: 'CHANGE_CROP',
+    category: 'navigation',
+    action: 'OPEN_CROP_SELECTOR',
+    examples: [
+      'crop बदलो',
+      'crop change karna hai',
+      'फसल बदलनी है',
+      'dusri fasal select karo',
+      'change crop'
+    ],
+    keywords: ['change crop', 'fasal badlo', 'dusri fasal', 'crop badalna', 'badlo']
   },
   {
     intent: 'TAKE_PHOTO',
     category: 'navigation',
     action: 'OPEN_CAMERA',
     examples: [
-      'photo se check karo',
+      'फोटो से फसल check करनी है',
       'camera kholo',
       'patti ki photo lo',
       'check crop photo',
@@ -224,7 +281,7 @@ export const GROOT_INTENTS: AssistantIntent[] = [
     keywords: ['photo', 'camera', 'patti', 'leaf scan', 'tasveer', 'scanner']
   },
   {
-    intent: 'WHAT_TO_DO',
+    intent: 'TODAY_ACTIONS',
     category: 'general',
     examples: [
       'आज मुझे क्या करना चाहिए',
@@ -240,10 +297,11 @@ export const GROOT_INTENTS: AssistantIntent[] = [
     intent: 'LATEST_ALERT',
     category: 'health',
     examples: [
-      'koi alert hai kya',
+      'कोई alert है क्या',
       'urgent notice',
       'kya khatra hai',
-      'latest warnings'
+      'latest warnings',
+      'khet me koi alert'
     ],
     keywords: ['alert', 'warning', 'khatra', 'urgent', 'suchna']
   },
@@ -252,7 +310,7 @@ export const GROOT_INTENTS: AssistantIntent[] = [
     category: 'health',
     action: 'OPEN_CAMERA',
     examples: [
-      'koi bimari to nahi hai',
+      'कोई बीमारी तो नहीं है',
       'keet lage hain',
       'pest attack',
       'fungus to nahi hai',
@@ -275,43 +333,36 @@ export const GROOT_INTENTS: AssistantIntent[] = [
     intent: 'HOW_TO_USE_GROOT',
     category: 'help',
     examples: [
-      'GROOT कैसे इस्तेमाल करूं',
+      'GROOT कैसे इस्तेमाल करें',
       'groot kaise use karu',
       'how to use groot',
       'ye app kaise chalate hai',
       'mujhe samjhao'
     ],
-    keywords: ['kaise use', 'how to use', 'kaise chalaye', 'app kya hai', 'guide']
-  },
-  {
-    intent: 'HOW_TO_SELECT_FARM',
-    category: 'help',
-    examples: [
-      'khet kaise select karu',
-      'location kaise badlu',
-      'map par khet kaise khoje'
-    ],
-    keywords: ['khet select', 'map search', 'location select']
+    keywords: ['kaise use', 'how to use', 'kaise chalaye', 'app kya hai', 'guide', 'kaise istemal']
   },
   {
     intent: 'HOW_TO_ADD_CROP',
     category: 'help',
+    action: 'OPEN_ADD_CROP',
     examples: [
       'fasal kaise jode',
-      'crop add kaise kare'
+      'crop add kaise kare',
+      'nayi fasal jodna batao'
     ],
-    keywords: ['crop add', 'fasal jodna']
+    keywords: ['crop add kaise', 'fasal kaise jode']
   },
   {
-    intent: 'TECHNICAL_DETAILS',
+    intent: 'HOW_TO_SELECT_FARM',
     category: 'help',
+    action: 'OPEN_FARM_MAP',
     examples: [
-      'NDVI kya hota hai',
-      'satellite data kya hai',
-      'technical details dikhao',
-      'sensor data'
+      'location कैसे बदलूं',
+      'khet kaise select karu',
+      'location kaise badlu',
+      'map par khet kaise khoje'
     ],
-    keywords: ['ndvi', 'satellite', 'spectral', 'sensor', 'technical']
+    keywords: ['location kaise', 'khet select', 'map search', 'location badlu']
   },
   {
     intent: 'HELP',
