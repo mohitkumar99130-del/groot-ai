@@ -18,6 +18,8 @@ import {
   FarmPlot,
   RealtimeWeather
 } from './types/groot';
+import { CropVariety } from './types/crops';
+import { ALL_CROP_VARIETIES } from './services/cropDatabase';
 import { LeftSidebar } from './components/Navigation/LeftSidebar';
 import { TopNavbar, DEMO_PLOTS } from './components/Navigation/TopNavbar';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
@@ -34,6 +36,8 @@ import { TemporalForecastChart } from './components/Analytics/TemporalForecastCh
 import { XaiAttributionMatrix } from './components/Analytics/XaiAttributionMatrix';
 import { IoTSoilMeshDashboard } from './components/Telemetry/IoTSoilMeshDashboard';
 import { KisanVoiceAssistant } from './components/Voice/KisanVoiceAssistant';
+import { FarmerMainHub } from './components/Farmer/FarmerMainHub';
+import { CropVarietySelector } from './components/Agronomy/CropVarietySelector';
 import { ExportDossierModal } from './components/Modals/ExportDossierModal';
 import { audio } from './services/audioService';
 import { realVoiceService } from './services/voiceService';
@@ -85,12 +89,16 @@ export function App() {
   const [telemetry, setTelemetry] = useState<SensorTelemetry>(INITIAL_TELEMETRY);
   const [activeLeaf, setActiveLeaf] = useState<LeafSample>(LEAF_SAMPLES[0]);
 
+  // Crop & Variety State
+  const [selectedVariety, setSelectedVariety] = useState<CropVariety>(ALL_CROP_VARIETIES[0]);
+  const [isCropSelectorOpen, setIsCropSelectorOpen] = useState(false);
+
   // Modals & Audio State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isGlobalSpeaking, setIsGlobalSpeaking] = useState(false);
 
-  // Compute live multi-modal fusion score
-  const fusionResult = calculateFusion(selectedZone, telemetry, activeLeaf);
+  // Compute live multi-modal fusion score (variety-calibrated)
+  const fusionResult = calculateFusion(selectedZone, telemetry, activeLeaf, selectedVariety);
   const hotspotCount = zones.filter((z) => z.isHotspot).length;
 
   const handleResetDemo = () => {
@@ -109,7 +117,8 @@ export function App() {
       return;
     }
     setIsGlobalSpeaking(true);
-    await realVoiceService.speak(fusionResult.hindiVoiceSummary, language === 'hi' ? 'hi' : 'en');
+    const summaryText = language === 'hi' ? fusionResult.hindiVoiceSummary : fusionResult.englishVoiceSummary;
+    await realVoiceService.speak(summaryText, language);
     setIsGlobalSpeaking(false);
   };
 
@@ -129,6 +138,8 @@ export function App() {
       <LeftSidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        selectedVariety={selectedVariety}
+        onOpenCropSelector={() => setIsCropSelectorOpen(true)}
         uiMode={uiMode}
         onUiModeChange={setUiMode}
         language={language}
@@ -153,6 +164,8 @@ export function App() {
           activeTab={activeTab}
           currentPlot={currentPlot}
           onPlotChange={setCurrentPlot}
+          selectedVariety={selectedVariety}
+          onOpenCropSelector={() => setIsCropSelectorOpen(true)}
           uiMode={uiMode}
           onUiModeChange={setUiMode}
           language={language}
@@ -198,40 +211,60 @@ export function App() {
           {/* PAGE 1: 🛰️ GEOSPATIAL SENTINEL-2 SATELLITE DECK */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Field Health Status Overview Banner */}
-              <FieldOverviewBanner
-                fusion={fusionResult}
-                zone={selectedZone}
-                currentPlot={currentPlot}
-                language={language}
-                onScrollToExplanation={handleScrollToExplanation}
-              />
 
-              {/* Main Geospatial Section: Map + Zone Detail Drawer */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <div className="lg:col-span-8 space-y-4">
-                  <SatelliteFieldMap
-                    zones={zones}
-                    selectedZone={selectedZone}
-                    onSelectZone={setSelectedZone}
-                    layerMode={layerMode}
-                    onLayerModeChange={setLayerMode}
-                    language={language}
-                  />
-                  <SpectralLegend layerMode={layerMode} />
-                </div>
-
-                <div className="lg:col-span-4">
-                  <ZoneDetailDrawer
-                    zone={selectedZone}
+              {/* FARMER EASY MODE: FarmerMainHub is the primary view */}
+              {isFarmerMode ? (
+                <FarmerMainHub
+                  fusion={fusionResult}
+                  zone={selectedZone}
+                  telemetry={telemetry}
+                  leaf={activeLeaf}
+                  variety={selectedVariety}
+                  language={language}
+                  weather={weather}
+                  onOpenCropSelector={() => setIsCropSelectorOpen(true)}
+                  onNavigateTab={setActiveTab}
+                  onRefreshWeather={() => loadWeather(currentPlot)}
+                  isWeatherLoading={isWeatherLoading}
+                />
+              ) : (
+                <>
+                  {/* PRO MODE: Full Satellite Dashboard */}
+                  <FieldOverviewBanner
                     fusion={fusionResult}
+                    zone={selectedZone}
+                    currentPlot={currentPlot}
+                    variety={selectedVariety}
                     language={language}
-                    onNavigateToDiagnostics={() => setActiveTab('camera_doctor')}
-                    onNavigateToFertilizer={() => setActiveTab('fertilizer_doctor')}
+                    onScrollToExplanation={handleScrollToExplanation}
                   />
-                </div>
 
-              </div>
+                  {/* Main Geospatial Section: Map + Zone Detail Drawer */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <div className="lg:col-span-8 space-y-4">
+                      <SatelliteFieldMap
+                        zones={zones}
+                        selectedZone={selectedZone}
+                        onSelectZone={setSelectedZone}
+                        layerMode={layerMode}
+                        onLayerModeChange={setLayerMode}
+                        language={language}
+                      />
+                      <SpectralLegend layerMode={layerMode} />
+                    </div>
+
+                    <div className="lg:col-span-4">
+                      <ZoneDetailDrawer
+                        zone={selectedZone}
+                        fusion={fusionResult}
+                        language={language}
+                        onNavigateToDiagnostics={() => setActiveTab('camera_doctor')}
+                        onNavigateToFertilizer={() => setActiveTab('fertilizer_doctor')}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -255,6 +288,7 @@ export function App() {
                 fusion={fusionResult}
                 zone={selectedZone}
                 telemetry={telemetry}
+                variety={selectedVariety}
                 language={language}
               />
 
@@ -310,6 +344,7 @@ export function App() {
                 zone={selectedZone}
                 telemetry={telemetry}
                 leaf={activeLeaf}
+                variety={selectedVariety}
                 language={language}
               />
             </div>
@@ -349,6 +384,11 @@ export function App() {
         onClose={() => setIsMobileMenuOpen(false)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        selectedVariety={selectedVariety}
+        onOpenCropSelector={() => {
+          setIsMobileMenuOpen(false);
+          setIsCropSelectorOpen(true);
+        }}
         uiMode={uiMode}
         onUiModeChange={setUiMode}
         language={language}
@@ -361,6 +401,19 @@ export function App() {
         onResetDemo={handleResetDemo}
         hotspotCount={hotspotCount}
         weather={weather}
+      />
+
+      {/* 8. Crop & Sub-Variety Selector Modal */}
+      <CropVarietySelector
+        isOpen={isCropSelectorOpen}
+        onClose={() => setIsCropSelectorOpen(false)}
+        selectedVariety={selectedVariety}
+        onSelectVariety={(variety: CropVariety) => {
+          setSelectedVariety(variety);
+          setIsCropSelectorOpen(false);
+          audio.playClick();
+        }}
+        language={language}
       />
 
       {/* 7. Export Field Audit PDF Dossier Modal */}

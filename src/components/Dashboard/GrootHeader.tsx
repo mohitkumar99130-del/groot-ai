@@ -27,6 +27,7 @@ interface GrootHeaderProps {
   onOpenExportModal: () => void;
   onResetDemo: () => void;
   hindiVoiceSummary?: string;
+  englishVoiceSummary?: string;
 }
 
 export const GrootHeader: React.FC<GrootHeaderProps> = ({
@@ -39,6 +40,7 @@ export const GrootHeader: React.FC<GrootHeaderProps> = ({
   onOpenExportModal,
   onResetDemo,
   hindiVoiceSummary,
+  englishVoiceSummary,
 }) => {
   const [isMuted, setIsMuted] = React.useState(audio.getMuted());
   const [isSpeaking, setIsSpeaking] = React.useState(false);
@@ -57,8 +59,11 @@ export const GrootHeader: React.FC<GrootHeaderProps> = ({
       return;
     }
     setIsSpeaking(true);
-    const summaryText = hindiVoiceSummary || 'नमस्कार किसान भाई! GROOT AI में आपका स्वागत है। आपकी फ़सल की सेहत अच्छी है। खेत में नमी 38% है। सही समय पर यूरिया का छिड़काव करें। धन्यवाद!';
-    await realVoiceService.speak(summaryText, 'hi');
+    const isHi = currentLanguage === 'hi';
+    const summaryText = isHi
+      ? (hindiVoiceSummary || 'नमस्कार किसान भाई! GROOT AI में आपका स्वागत है। आपकी फ़सल की सेहत अच्छी है। खेत में नमी 38% है। सही समय पर यूरिया का छिड़काव करें। धन्यवाद!')
+      : (englishVoiceSummary || 'Hello farmer! Welcome to GROOT AI. Your crop health is good with balanced soil moisture. Apply fertilizer at the recommended schedule. Thank you!');
+    await realVoiceService.speak(summaryText, currentLanguage);
     setIsSpeaking(false);
   };
 

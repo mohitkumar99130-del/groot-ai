@@ -16,12 +16,15 @@ import {
 } from 'lucide-react';
 
 import { AppLanguage, UserUIMode, FarmPlot, RealtimeWeather, AppNavigationTab } from '../../types/groot';
+import { CropVariety } from '../../types/crops';
 import { audio } from '../../services/audioService';
 
 interface TopNavbarProps {
   activeTab: AppNavigationTab;
   currentPlot: FarmPlot;
   onPlotChange: (plot: FarmPlot) => void;
+  selectedVariety?: CropVariety;
+  onOpenCropSelector?: () => void;
   uiMode: UserUIMode;
   onUiModeChange: (mode: UserUIMode) => void;
   language: AppLanguage;
@@ -79,6 +82,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   activeTab,
   currentPlot,
   onPlotChange,
+  selectedVariety,
+  onOpenCropSelector,
   uiMode,
   onUiModeChange,
   language,
@@ -187,9 +192,24 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             </button>
           </div>
 
-          {/* Right: Farm Plot Switcher + Voice CTA + Quick Controls */}
+          {/* Right: Farm Plot Switcher + Crop Variety Button + Voice CTA + Quick Controls */}
           <div className="flex items-center gap-2">
             
+            {/* Active Crop & Variety Picker Trigger Button */}
+            {selectedVariety && onOpenCropSelector && (
+              <button
+                onClick={() => {
+                  audio.playClick();
+                  onOpenCropSelector();
+                }}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 text-xs font-mono font-bold transition-all"
+                title="Change Crop & Sub-Variety"
+              >
+                <span>{selectedVariety.iconEmoji}</span>
+                <span className="max-w-[130px] truncate">{isHi ? selectedVariety.varietyHindi : selectedVariety.varietyName}</span>
+              </button>
+            )}
+
             {/* Active Farm Plot Selector Dropdown */}
             <div className="relative">
               <button

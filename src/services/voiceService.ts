@@ -3,35 +3,68 @@ import { audio } from './audioService';
 class VoiceService {
   private currentAudio: HTMLAudioElement | null = null;
 
+  constructor() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }
+
   /**
    * Speak clean, realistic natural Hindi / English voice audio
    */
-  public speakText(text: string, lang: 'hi' | 'en' = 'hi', onEnd?: () => void, onError?: () => void): void {
+  public speakText(text: string, lang: 'hi' | 'en' | 'hinglish' = 'hi', onEnd?: () => void, onError?: () => void): void {
     this.stop();
     audio.playHarmonicConvergence();
 
+    const normalizedLang: 'hi' | 'en' = lang === 'hi' ? 'hi' : 'en';
+
     // 1. Try Natural HD Audio Stream via Backend API / Google TTS
-    const encodedText = encodeURIComponent(text.slice(0, 300));
-    const ttsApiUrl = `/api/tts?text=${encodedText}&lang=${lang}`;
+    const encodedText = encodeURIComponent(text.slice(0, 200));
+    const ttsApiUrl = `/api/tts?text=${encodedText}&lang=${normalizedLang}`;
 
-    const audioObj = new Audio(ttsApiUrl);
-    this.currentAudio = audioObj;
+    let fallbackCalled = false;
+    const triggerFallback = (err?: any) => {
+      if (fallbackCalled) return;
+      fallbackCalled = true;
+      console.warn('⚠️ HD Voice stream unavailable or errored, falling back to browser neural speech synthesis:', err);
+      if (this.currentAudio) {
+        this.currentAudio.pause();
+        this.currentAudio = null;
+      }
+      this.speakBrowserUtterance(text, normalizedLang, onEnd, onError);
+    };
 
-    audioObj.play()
-      .then(() => {
-        console.log('🔊 Playing clean natural HD TTS voice stream');
-        audioObj.onended = () => {
-          this.currentAudio = null;
-          if (onEnd) onEnd();
-        };
-      })
-      .catch((err) => {
-        console.warn('⚠️ HD Voice Stream unavailable, switching to browser neural voice:', err);
-        this.speakBrowserUtterance(text, lang, onEnd, onError);
-      });
+    try {
+      const audioObj = new Audio(ttsApiUrl);
+      this.currentAudio = audioObj;
+
+      audioObj.onended = () => {
+        this.currentAudio = null;
+        if (onEnd) onEnd();
+      };
+
+      audioObj.onerror = (e) => {
+        triggerFallback(e);
+      };
+
+      const playPromise = audioObj.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('🔊 Playing clean natural HD TTS voice stream in', normalizedLang);
+          })
+          .catch((err) => {
+            triggerFallback(err);
+          });
+      }
+    } catch (e) {
+      triggerFallback(e);
+    }
   }
 
-  public speak(text: string, lang: 'hi' | 'en' = 'hi', onEnd?: () => void, onError?: () => void): Promise<void> {
+  public speak(text: string, lang: 'hi' | 'en' | 'hinglish' = 'hi', onEnd?: () => void, onError?: () => void): Promise<void> {
     return new Promise((resolve) => {
       this.speakText(text, lang, () => {
         if (onEnd) onEnd();
@@ -44,37 +77,72 @@ class VoiceService {
   }
 
   /**
-   * Fallback using Web Speech API with hi-IN Hindi locale
+   * Resilient fallback using Web Speech API with automatic multi-dialect English and Hindi voice selection
    */
   private speakBrowserUtterance(text: string, lang: 'hi' | 'en', onEnd?: () => void, onError?: () => void): void {
-    if (!('speechSynthesis' in window)) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      console.warn('Speech synthesis not supported in this environment');
       if (onError) onError();
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.92;
-    utterance.pitch = 1.0;
+    try {
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
 
-    if (lang === 'hi') {
-      utterance.lang = 'hi-IN';
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = lang === 'hi' ? 0.92 : 0.96;
+      utterance.pitch = 1.0;
+
       const voices = window.speechSynthesis.getVoices();
-      const hindiVoice = voices.find(v => v.lang.includes('hi') || v.name.includes('Hindi') || v.name.includes('India'));
-      if (hindiVoice) utterance.voice = hindiVoice;
-    } else {
-      utterance.lang = 'en-IN';
-    }
+      if (lang === 'hi') {
+        utterance.lang = 'hi-IN';
+        const hindiVoice = voices.find(v => 
+          v.lang.startsWith('hi') || 
+          v.name.toLowerCase().includes('hindi') || 
+          v.name.toLowerCase().includes('india')
+        );
+        if (hindiVoice) utterance.voice = hindiVoice;
+      } else {
+        // Find best matching English voice
+        const englishVoice = 
+          voices.find(v => v.lang === 'en-IN' || v.name.toLowerCase().includes('india')) ||
+          voices.find(v => v.lang === 'en-US' || v.lang.startsWith('en-US')) ||
+          voices.find(v => v.lang === 'en-GB' || v.lang.startsWith('en-GB')) ||
+          voices.find(v => v.lang.startsWith('en') || v.name.toLowerCase().includes('english'));
+        
+        if (englishVoice) {
+          utterance.voice = englishVoice;
+          utterance.lang = englishVoice.lang;
+        } else {
+          utterance.lang = 'en-US';
+        }
+      }
 
-    utterance.onend = () => {
-      if (onEnd) onEnd();
-    };
+      let hasFinished = false;
+      const complete = () => {
+        if (hasFinished) return;
+        hasFinished = true;
+        if (onEnd) onEnd();
+      };
 
-    utterance.onerror = () => {
+      utterance.onend = () => {
+        complete();
+      };
+
+      utterance.onerror = (e) => {
+        console.warn('Browser SpeechSynthesis encountered an issue:', e);
+        complete();
+        if (onError) onError();
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error('Failed to trigger speech synthesis:', e);
       if (onError) onError();
-    };
-
-    window.speechSynthesis.speak(utterance);
+    }
   }
 
   public stop(): void {
@@ -83,7 +151,7 @@ class VoiceService {
       this.currentAudio.currentTime = 0;
       this.currentAudio = null;
     }
-    if ('speechSynthesis' in window) {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
   }

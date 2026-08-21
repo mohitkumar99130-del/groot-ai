@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { FusionResult, FieldZone, AppLanguage, SensorTelemetry } from '../../types/groot';
+import { CropVariety } from '../../types/crops';
+import { ALL_CROP_VARIETIES } from '../../services/cropDatabase';
 import { 
   FlaskConical, 
   Calendar, 
   Volume2, 
   Scale,
-  DollarSign
+  DollarSign,
+  Sprout
 } from 'lucide-react';
 
 import { audio } from '../../services/audioService';
@@ -15,35 +18,41 @@ interface FertilizerCalculatorProps {
   fusion: FusionResult;
   zone: FieldZone;
   telemetry: SensorTelemetry;
+  variety?: CropVariety;
   language: AppLanguage;
 }
 
 export const FertilizerCalculator: React.FC<FertilizerCalculatorProps> = ({
   zone,
   telemetry,
+  variety = ALL_CROP_VARIETIES[0],
   language,
 }) => {
 
   const [fieldSizeAcre, setFieldSizeAcre] = useState<number>(2.5); // Default 2.5 acres
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Dynamic calculations per acre based on telemetry NPK
-  const nDeficit = Math.max(0, 40 - telemetry.npk.nitrogen);
-  const pDeficit = Math.max(0, 25 - telemetry.npk.phosphorus);
-  const kDeficit = Math.max(0, 35 - telemetry.npk.potassium);
+  // Dynamic calculations per acre based on selected variety's target NPK
+  const targetN = variety.optimalNpkPerAcre.nitrogenKg;
+  const targetP = variety.optimalNpkPerAcre.phosphorusKg;
+  const targetK = variety.optimalNpkPerAcre.potassiumKg;
+
+  const nDeficit = Math.max(0, targetN - telemetry.npk.nitrogen);
+  const pDeficit = Math.max(0, targetP - telemetry.npk.phosphorus);
+  const kDeficit = Math.max(0, targetK - telemetry.npk.potassium);
 
   // Urea (46% N) = (N deficit * 2.17) kg/acre
-  const ureaPerAcre = Math.round(nDeficit > 0 ? (nDeficit * 2.2 + 25) : 35);
+  const ureaPerAcre = Math.round(nDeficit > 0 ? (nDeficit * 2.17 + (targetN * 0.4)) : targetN);
   const totalUrea = Math.round(ureaPerAcre * fieldSizeAcre);
   const ureaBags = (totalUrea / 45).toFixed(1); // 45kg bag
 
   // DAP (18% N, 46% P2O5) = (P deficit * 2.17) kg/acre
-  const dapPerAcre = Math.round(pDeficit > 0 ? (pDeficit * 2.1 + 20) : 25);
+  const dapPerAcre = Math.round(pDeficit > 0 ? (pDeficit * 2.17 + (targetP * 0.3)) : targetP);
   const totalDap = Math.round(dapPerAcre * fieldSizeAcre);
   const dapBags = (totalDap / 50).toFixed(1); // 50kg bag
 
   // MOP (60% K2O) = (K deficit * 1.66) kg/acre
-  const mopPerAcre = Math.round(kDeficit > 0 ? (kDeficit * 1.6 + 15) : 20);
+  const mopPerAcre = Math.round(kDeficit > 0 ? (kDeficit * 1.66 + (targetK * 0.3)) : targetK);
   const totalMop = Math.round(mopPerAcre * fieldSizeAcre);
   const mopBags = (totalMop / 50).toFixed(1);
 
@@ -61,8 +70,8 @@ export const FertilizerCalculator: React.FC<FertilizerCalculatorProps> = ({
     }
     setIsSpeaking(true);
     const text = language === 'hi'
-      ? `आपके ${fieldSizeAcre} एकड़ खेत के लिए खाद की गणना: नीम कोटेड यूरिया कुल ${totalUrea} किलोग्राम (लगभग ${ureaBags} बोरी), डीएपी खाद ${totalDap} किलोग्राम, तथा पोटाश ${totalMop} किलोग्राम डालें। पहली खुराक सिंचाई के तुरंत बाद सुबह दें।`
-      : `Fertilizer dosage prescription for ${fieldSizeAcre} acres: Neem Coated Urea total ${totalUrea} kg (approx ${ureaBags} bags), DAP total ${totalDap} kg, and MOP total ${totalMop} kg. Apply initial split post-irrigation in early morning.`;
+      ? `आपके ${fieldSizeAcre} एकड़ ${variety.varietyHindi} खेत के लिए खाद की गणना: नीम कोटेड यूरिया कुल ${totalUrea} किलोग्राम (लगभग ${ureaBags} बोरी), डीएपी खाद ${totalDap} किलोग्राम, तथा पोटाश ${totalMop} किलोग्राम डालें। पहली खुराक सिंचाई के तुरंत बाद सुबह दें।`
+      : `Fertilizer dosage prescription for ${fieldSizeAcre} acres of ${variety.varietyName}: Neem Coated Urea total ${totalUrea} kg (approx ${ureaBags} bags), DAP total ${totalDap} kg, and MOP total ${totalMop} kg. Apply initial split post-irrigation in early morning.`;
     await realVoiceService.speak(text, language === 'hi' ? 'hi' : 'en');
     setIsSpeaking(false);
   };
@@ -76,14 +85,18 @@ export const FertilizerCalculator: React.FC<FertilizerCalculatorProps> = ({
             <FlaskConical className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <h3 className="font-display font-black text-lg sm:text-xl text-white flex items-center gap-2">
-              {language === 'hi' ? 'सटीक खाद व पोषक तत्व कैलकुलेटर' : 'Precision N-P-K Fertilizer Rx Engine'}
+            <h3 className="font-display font-black text-lg sm:text-xl text-white flex flex-wrap items-center gap-2">
+              <span>{language === 'hi' ? 'सटीक खाद व पोषक तत्व कैलकुलेटर' : 'Precision N-P-K Fertilizer Rx Engine'}</span>
+              <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold flex items-center gap-1">
+                <Sprout className="w-3 h-3 text-emerald-400" />
+                {language === 'hi' ? variety.varietyHindi : variety.varietyName}
+              </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-amber-300 border border-amber-500/40 font-bold">
                 ZONE {zone.id}
               </span>
             </h3>
             <p className="text-xs text-slate-300 font-mono mt-0.5">
-              Automated Agronomic Calculations Calibrated to Real-Time ESP32 Soil Sensor Telemetry.
+              Automated Agronomic Calculations Calibrated to Real-Time ESP32 Soil Sensor Telemetry & {variety.varietyName} targets.
             </p>
           </div>
         </div>

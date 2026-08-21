@@ -18,12 +18,15 @@ import {
   UserCheck
 } from 'lucide-react';
 import { AppNavigationTab, UserUIMode, AppLanguage, FarmPlot, RealtimeWeather } from '../../types/groot';
+import { CropVariety } from '../../types/crops';
 import { DEMO_PLOTS } from './TopNavbar';
 import { audio } from '../../services/audioService';
 
 interface LeftSidebarProps {
   activeTab: AppNavigationTab;
   onTabChange: (tab: AppNavigationTab) => void;
+  selectedVariety?: CropVariety;
+  onOpenCropSelector?: () => void;
   uiMode: UserUIMode;
   onUiModeChange: (mode: UserUIMode) => void;
   language: AppLanguage;
@@ -43,6 +46,8 @@ interface LeftSidebarProps {
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   activeTab,
   onTabChange,
+  selectedVariety,
+  onOpenCropSelector,
   uiMode,
   onUiModeChange,
   language,
@@ -168,14 +173,37 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             >
               {DEMO_PLOTS.map((plot) => (
                 <option key={plot.id} value={plot.id} className="bg-slate-950 text-white">
-                  {plot.name} ({plot.crop})
+                  {plot.name}
                 </option>
               ))}
             </select>
           </div>
+          
+          {/* Active Crop Variety Button */}
+          {selectedVariety && onOpenCropSelector && (
+            <button
+              onClick={() => {
+                audio.playClick();
+                onOpenCropSelector();
+              }}
+              className="w-full mt-1.5 p-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 hover:border-emerald-400 text-emerald-300 transition-all flex items-center justify-between text-xs font-bold text-left group"
+            >
+              <div className="flex items-center gap-2 truncate">
+                <span className="text-base">{selectedVariety.iconEmoji}</span>
+                <div className="truncate">
+                  <div className="truncate text-white">{isHi ? selectedVariety.varietyHindi : selectedVariety.varietyName}</div>
+                  <div className="text-[10px] text-slate-400 font-normal">{isHi ? selectedVariety.grainTypeHindi : selectedVariety.grainType}</div>
+                </div>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-950 text-amber-300 font-mono shrink-0">
+                {isHi ? 'बदलें' : 'Edit'}
+              </span>
+            </button>
+          )}
+
           <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-0.5">
             <span className="flex items-center gap-1 text-emerald-400">
-              <Sprout className="w-3 h-3" />
+              <Sprout className="w-3.5 h-3.5" />
               {currentPlot.locationName}
             </span>
             <span className="font-bold text-slate-300">

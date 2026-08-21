@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { FusionResult, FieldZone, AppLanguage, FarmPlot } from '../../types/groot';
+import { CropVariety } from '../../types/crops';
+import { ALL_CROP_VARIETIES } from '../../services/cropDatabase';
 import { 
   HeartPulse, 
   ShieldAlert, 
@@ -15,6 +17,7 @@ interface FieldOverviewBannerProps {
   fusion: FusionResult;
   zone: FieldZone;
   currentPlot: FarmPlot;
+  variety?: CropVariety;
   language: AppLanguage;
   onScrollToExplanation: () => void;
   onNavigateToDiagnostics?: () => void;
@@ -23,12 +26,12 @@ interface FieldOverviewBannerProps {
 export const FieldOverviewBanner: React.FC<FieldOverviewBannerProps> = ({
   fusion,
   zone,
-  currentPlot,
+  variety = ALL_CROP_VARIETIES[0],
   language,
   onScrollToExplanation,
 }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const isHighRisk = fusion.riskPercentage > 60;
+  const isHighRisk = fusion.riskPercentage > 50;
 
   const handleSpeakSummary = async () => {
     audio.playClick();
@@ -38,7 +41,8 @@ export const FieldOverviewBanner: React.FC<FieldOverviewBannerProps> = ({
       return;
     }
     setIsSpeaking(true);
-    await realVoiceService.speak(fusion.hindiVoiceSummary, language === 'hi' ? 'hi' : 'en');
+    const summaryText = language === 'hi' ? fusion.hindiVoiceSummary : fusion.englishVoiceSummary;
+    await realVoiceService.speak(summaryText, language);
     setIsSpeaking(false);
   };
 
@@ -50,15 +54,16 @@ export const FieldOverviewBanner: React.FC<FieldOverviewBannerProps> = ({
         <div className="space-y-2 max-w-xl">
           <div className="flex flex-wrap items-center gap-2 font-mono">
             <span className="text-xs text-slate-400">Target Field Parcel:</span>
-            <span className="text-sm font-bold text-amber-300 bg-slate-950 px-3 py-1 rounded-xl border border-amber-500/40 shadow-inner">
-              {zone.id} • {currentPlot.crop}
+            <span className="text-sm font-bold text-amber-300 bg-slate-950 px-3 py-1 rounded-xl border border-amber-500/40 shadow-inner flex items-center gap-1.5">
+              <span>{variety.iconEmoji}</span>
+              <span>{zone.id} • {language === 'hi' ? variety.varietyHindi : variety.varietyName}</span>
             </span>
             <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
               isHighRisk
                 ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
                 : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
             }`}>
-              {isHighRisk ? '🚨 ' + zone.cropCondition : '✅ ' + zone.cropCondition}
+              {isHighRisk ? '🚨 ' + (language === 'hi' ? 'तनाव / रोग खतरा' : zone.cropCondition) : '✅ ' + (language === 'hi' ? 'स्वस्थ फसल' : zone.cropCondition)}
             </span>
           </div>
 

@@ -12,10 +12,14 @@ export type UserUIMode = 'farmer_easy' | 'pro_agronomy';
 
 export type AppLanguage = 'hi' | 'en' | 'hinglish';
 
+export * from './crops';
+
+
 export interface FarmPlot {
   id: string;
   name: string;
   crop: string;
+  varietyId?: string;
   areaHa: number;
   season: string;
   plantingDate: string;
@@ -136,6 +140,7 @@ export interface FusionResult {
   pestControl: PestControlRecommendation[];
   productivitySteps: ProductivityStep[];
   hindiVoiceSummary: string;
+  englishVoiceSummary: string;
 }
 
 export interface TemporalDataPoint {

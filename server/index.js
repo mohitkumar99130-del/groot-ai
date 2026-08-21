@@ -227,12 +227,26 @@ app.post('/api/analyze-crop', async (req, res) => {
 
 // 2. REAL NATURAL HIGH-QUALITY TTS VOICE AUDIO ENDPOINT
 app.get('/api/tts', (req, res) => {
-  const text = req.query.text || 'नमस्कार किसान भाई! GROOT AI में आपका स्वागत है।';
-  const lang = req.query.lang || 'hi';
+  const lang = req.query.lang === 'en' ? 'en' : 'hi';
+  const defaultText = lang === 'hi' 
+    ? 'नमस्कार किसान भाई! GROOT AI में आपका स्वागत है।' 
+    : 'Welcome to GROOT AI Precision Agronomy Suite.';
+  const text = (req.query.text || defaultText).slice(0, 200);
 
   const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
 
-  https.get(ttsUrl, (ttsRes) => {
+  const options = {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Referer': 'https://translate.google.com/',
+    }
+  };
+
+  https.get(ttsUrl, options, (ttsRes) => {
+    if (ttsRes.statusCode !== 200) {
+      console.warn(`TTS Proxy warning: Google returned status code ${ttsRes.statusCode}`);
+      return res.status(ttsRes.statusCode).send('TTS upstream failure');
+    }
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'public, max-age=86400');
     ttsRes.pipe(res);

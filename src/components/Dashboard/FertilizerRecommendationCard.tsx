@@ -38,15 +38,22 @@ export const FertilizerRecommendationCard: React.FC<FertilizerRecommendationCard
       return;
     }
     setIsSpeaking(true);
+    const isHi = showHindi;
     let speechText = '';
     if (activeTab === 'fertilizer') {
-      speechText = `खाद सलाह: ${fusion.fertilizers.map(f => `${f.hindiName}, ${f.dosage}, ${f.hindiTiming}`).join('. ')}`;
+      speechText = isHi
+        ? `खाद सलाह: ${fusion.fertilizers.map(f => `${f.hindiName}, ${f.dosage}, ${f.hindiTiming}`).join('. ')}`
+        : `Fertilizer advice: ${fusion.fertilizers.map(f => `${f.name}, dosage ${f.dosage}, application: ${f.applicationTiming}`).join('. ')}`;
     } else if (activeTab === 'pests') {
-      speechText = `कीटनाशक सलाह: ${fusion.pestControl.map(p => `${p.hindiPestName}. ${p.hindiRemedy}`).join('. ')}`;
+      speechText = isHi
+        ? `कीटनाशक सलाह: ${fusion.pestControl.map(p => `${p.hindiPestName}. ${p.hindiRemedy}`).join('. ')}`
+        : `Pest management advice: ${fusion.pestControl.map(p => `${p.pestName}. ${p.chemicalRemedy}`).join('. ')}`;
     } else {
-      speechText = `पैदावार बढ़ाने के कदम: ${fusion.productivitySteps.map(s => `${s.hindiTitle}. ${s.hindiDetails}`).join('. ')}`;
+      speechText = isHi
+        ? `पैदावार बढ़ाने के कदम: ${fusion.productivitySteps.map(s => `${s.hindiTitle}. ${s.hindiDetails}`).join('. ')}`
+        : `Yield improvement steps: ${fusion.productivitySteps.map(s => `${s.title}. ${s.details}`).join('. ')}`;
     }
-    await realVoiceService.speak(speechText, 'hi');
+    await realVoiceService.speak(speechText, isHi ? 'hi' : 'en');
     setIsSpeaking(false);
   };
 

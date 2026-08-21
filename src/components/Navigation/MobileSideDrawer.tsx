@@ -16,6 +16,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { AppNavigationTab, UserUIMode, AppLanguage, FarmPlot, RealtimeWeather } from '../../types/groot';
+import { CropVariety } from '../../types/crops';
 import { DEMO_PLOTS } from './TopNavbar';
 import { audio } from '../../services/audioService';
 
@@ -24,6 +25,8 @@ interface MobileSideDrawerProps {
   onClose: () => void;
   activeTab: AppNavigationTab;
   onTabChange: (tab: AppNavigationTab) => void;
+  selectedVariety?: CropVariety;
+  onOpenCropSelector?: () => void;
   uiMode: UserUIMode;
   onUiModeChange: (mode: UserUIMode) => void;
   language: AppLanguage;
@@ -43,6 +46,8 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
   onClose,
   activeTab,
   onTabChange,
+  selectedVariety,
+  onOpenCropSelector,
   uiMode,
   onUiModeChange,
   language,
@@ -193,7 +198,7 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
                     <Sprout className="w-4 h-4 text-emerald-400 shrink-0" />
                     <div>
                       <div className="font-bold text-white text-xs">{plot.name}</div>
-                      <div className="text-[10px] text-slate-400">{plot.crop}</div>
+                      <div className="text-[10px] text-slate-400">{plot.locationName}</div>
                     </div>
                   </div>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-950 text-emerald-400 font-bold border border-emerald-500/30">
@@ -202,6 +207,29 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* Active Crop & Variety Picker Button (Mobile) */}
+            {selectedVariety && onOpenCropSelector && (
+              <button
+                onClick={() => {
+                  audio.playClick();
+                  onOpenCropSelector();
+                  onClose();
+                }}
+                className="w-full p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 transition-all flex items-center justify-between text-xs font-bold text-left"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <span className="text-base">{selectedVariety.iconEmoji}</span>
+                  <div className="truncate">
+                    <div className="truncate text-white">{language === 'hi' ? selectedVariety.varietyHindi : selectedVariety.varietyName}</div>
+                    <div className="text-[10px] text-slate-400 font-normal">{language === 'hi' ? selectedVariety.grainTypeHindi : selectedVariety.grainType}</div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-950 text-amber-300 font-mono shrink-0">
+                  {language === 'hi' ? 'बदलें' : 'Change'}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Core Navigation Items */}
