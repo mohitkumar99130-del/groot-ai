@@ -4,10 +4,7 @@ import {
   Layers, 
   Search, 
   Navigation, 
-  Eye, 
-  EyeOff, 
-  Compass, 
-  Info
+  MapPin
 } from 'lucide-react';
 import { AppLanguage, FarmPlot, FieldZone, LayerMode } from '../../types/groot';
 import { CropVariety } from '../../types/crops';
@@ -20,9 +17,9 @@ interface MyFarmPageProps {
   zones: FieldZone[];
   selectedZone: FieldZone;
   onSelectZone: (zone: FieldZone) => void;
-  layerMode: LayerMode;
-  onLayerModeChange: (mode: LayerMode) => void;
-  variety: CropVariety;
+  layerMode?: LayerMode;
+  onLayerModeChange?: (mode: LayerMode) => void;
+  variety?: CropVariety;
   language: AppLanguage;
 }
 
@@ -31,28 +28,24 @@ export const MyFarmPage: React.FC<MyFarmPageProps> = ({
   zones,
   selectedZone,
   onSelectZone,
-  layerMode,
-  onLayerModeChange,
-  variety,
   language,
 }) => {
-  const [mapType, setMapType] = useState<'satellite' | 'hybrid' | 'map'>('satellite');
+  const [mapType, setMapType] = useState<'satellite' | 'hybrid'>('satellite');
   const [searchLocationQuery, setSearchLocationQuery] = useState('');
   const [isLocating, setIsLocating] = useState(false);
   const [locationStatus, setLocationStatus] = useState<string | null>(null);
-  const [showSpectralOverlay, setShowSpectralOverlay] = useState(true);
+  const [isDrawingField, setIsDrawingField] = useState(false);
   const [activeFieldId, setActiveFieldId] = useState<string>(currentPlot.fields?.[0]?.id || 'field_north_wheat');
 
   const isHi = language === 'hi';
 
-  // Handle HTML5 Geolocation with graceful fallback
   const handleUseCurrentLocation = () => {
     audio.playClick();
     setIsLocating(true);
-    setLocationStatus('Locating your device GPS coordinates...');
+    setLocationStatus('GPS से आपका स्थान खोजा जा रहा है...');
 
     if (!navigator.geolocation) {
-      setLocationStatus('Geolocation is not supported by your browser. Please search your village below.');
+      setLocationStatus('आपके ब्राउज़र में GPS उपलब्ध नहीं है। कृपया नीचे अपना गाँव खोजें।');
       setIsLocating(false);
       return;
     }
@@ -61,15 +54,15 @@ export const MyFarmPage: React.FC<MyFarmPageProps> = ({
       (position) => {
         setIsLocating(false);
         const { latitude, longitude } = position.coords;
-        setLocationStatus(`Location acquired: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`);
+        setLocationStatus(`स्थान मिल गया: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`);
         audio.playPulse();
       },
       (error) => {
         setIsLocating(false);
         console.warn('Geolocation error:', error);
-        setLocationStatus('Location permission denied or unavailable. You can search village / PIN code below.');
+        setLocationStatus('स्थान अनुमति नहीं मिली। कोई बात नहीं! आप नीचे अपने गाँव का नाम खोज सकते हैं।');
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      { timeout: 8000, enableHighAccuracy: true }
     );
   };
 
@@ -77,78 +70,76 @@ export const MyFarmPage: React.FC<MyFarmPageProps> = ({
     e.preventDefault();
     if (!searchLocationQuery.trim()) return;
     audio.playClick();
-    setLocationStatus(`Focused on "${searchLocationQuery.trim()}". Real coordinates synced.`);
+    setLocationStatus(`नक्शा "${searchLocationQuery.trim()}" पर केंद्रित किया गया।`);
     setSearchLocationQuery('');
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6 animate-in fade-in duration-150 max-w-[1400px] mx-auto">
       
-      {/* 1. Header & Location Controls Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-[#031108] border border-emerald-500/30 shadow-xl">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🗺️</span>
-            <h2 className="text-xl sm:text-2xl font-black text-white">
-              {isHi ? 'मेरा खेत व उपग्रह नक्शा (My Farm & Satellite View)' : 'My Farm & Satellite View'}
+      {/* 1. Header & Location Search (Visual First, No Coordinates Form) */}
+      <div className="groot-card p-5 sm:p-6 bg-white space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          <div className="space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-[#1B2520] flex items-center gap-2">
+              <span>🗺️ {isHi ? 'आपका खेत कहाँ है?' : 'Where is your farm?'}</span>
             </h2>
+            <p className="text-xs sm:text-sm text-[#66756D]">
+              📍 {currentPlot.name} • {currentPlot.locationName}
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-slate-300">
-            📍 {currentPlot.name} • {currentPlot.locationName} ({currentPlot.latitude}°N, {currentPlot.longitude}°E)
-          </p>
+
+          {/* Quick Actions: Use My Location & Search */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={handleUseCurrentLocation}
+              disabled={isLocating}
+              className="groot-btn-primary px-4 py-2.5 text-xs font-bold"
+            >
+              <Navigation className={`w-4 h-4 mr-2 ${isLocating ? 'animate-spin' : ''}`} />
+              <span>{isLocating ? 'Locating...' : (isHi ? '📍 वर्तमान स्थान लें' : '📍 Use My Location')}</span>
+            </button>
+
+            <form onSubmit={handleSearchLocation} className="flex items-center">
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-[#66756D] absolute left-3.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={isHi ? 'गाँव, शहर या जगह खोजें...' : 'Search village, city or place...'}
+                  value={searchLocationQuery}
+                  onChange={(e) => setSearchLocationQuery(e.target.value)}
+                  className="bg-[#F6F8F2] border border-[#DDE6DD] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1B2520] placeholder-[#66756D] focus:outline-none focus:border-[#1F6B45] min-w-[200px] sm:min-w-[260px] min-h-[44px]"
+                />
+              </div>
+            </form>
+          </div>
+
         </div>
 
-        {/* Location Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Use GPS Location */}
-          <button
-            onClick={handleUseCurrentLocation}
-            disabled={isLocating}
-            className="px-4 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-lg min-h-[44px]"
-          >
-            <Navigation className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
-            <span>{isLocating ? 'Locating...' : (isHi ? '📍 वर्तमान स्थान लें' : '📍 Use My Location')}</span>
-          </button>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearchLocation} className="flex items-center">
-            <div className="relative flex items-center">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
-              <input
-                type="text"
-                placeholder={isHi ? 'गाँव, पिन कोड या जिला खोजें...' : 'Search village, PIN or district...'}
-                value={searchLocationQuery}
-                onChange={(e) => setSearchLocationQuery(e.target.value)}
-                className="bg-slate-900 border border-slate-800 rounded-2xl pl-8 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 min-w-[200px] sm:min-w-[260px] min-h-[44px]"
-              />
-            </div>
-          </form>
-        </div>
+        {locationStatus && (
+          <div className="p-3 rounded-xl bg-[#EDF4EC] border border-[#DDE6DD] text-xs text-[#1F6B45] font-medium flex items-center justify-between">
+            <span>ℹ️ {locationStatus}</span>
+            <button onClick={() => setLocationStatus(null)} className="text-[#66756D] font-bold">×</button>
+          </div>
+        )}
       </div>
 
-      {locationStatus && (
-        <div className="px-4 py-2 rounded-xl bg-slate-900 border border-emerald-500/30 text-xs text-emerald-300 font-mono flex items-center justify-between">
-          <span>ℹ️ {locationStatus}</span>
-          <button onClick={() => setLocationStatus(null)} className="text-slate-500 hover:text-white font-bold">×</button>
-        </div>
-      )}
-
-      {/* 2. Main Farm Map Canvas Area */}
+      {/* 2. Interactive Satellite Map Canvas */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Left: Interactive Satellite View */}
+        {/* Left 8 Cols: Large Satellite Map */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="p-4 sm:p-5 rounded-3xl bg-[#031108] border border-emerald-500/30 shadow-2xl space-y-4 relative overflow-hidden">
+          <div className="groot-card p-4 sm:p-5 bg-white space-y-4 relative overflow-hidden">
             
-            {/* Map Header Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+            {/* Map Mode Toggles */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[#DDE6DD]">
               
-              {/* Map View Mode Toggles (Satellite / Hybrid / Map) */}
-              <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+              <div className="flex items-center gap-1.5 p-1 bg-[#F6F8F2] rounded-xl border border-[#DDE6DD]">
                 <button
                   onClick={() => setMapType('satellite')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    mapType === 'satellite' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    mapType === 'satellite' ? 'bg-[#1F6B45] text-white shadow-sm' : 'text-[#66756D] hover:text-[#1B2520]'
                   }`}
                 >
                   <Satellite className="w-3.5 h-3.5" />
@@ -156,139 +147,98 @@ export const MyFarmPage: React.FC<MyFarmPageProps> = ({
                 </button>
                 <button
                   onClick={() => setMapType('hybrid')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    mapType === 'hybrid' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    mapType === 'hybrid' ? 'bg-[#1F6B45] text-white shadow-sm' : 'text-[#66756D] hover:text-[#1B2520]'
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span>Hybrid</span>
                 </button>
-                <button
-                  onClick={() => setMapType('map')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    mapType === 'map' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Compass className="w-3.5 h-3.5" />
-                  <span>Road Map</span>
-                </button>
               </div>
 
-              {/* Spectral Analytical Overlay Toggle */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
                     audio.playClick();
-                    setShowSpectralOverlay(!showSpectralOverlay);
+                    setIsDrawingField(!isDrawingField);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all border flex items-center gap-1.5 ${
-                    showSpectralOverlay
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                    isDrawingField
+                      ? 'bg-[#F2B84B] text-[#1B2520] border-[#F2B84B]'
+                      : 'bg-[#EDF4EC] text-[#1F6B45] border-[#DDE6DD]'
                   }`}
                 >
-                  {showSpectralOverlay ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  <span>{isHi ? 'रिमोट सेंसिंग परत' : 'Remote Sensing Overlay'}</span>
+                  {isDrawingField ? '✏️ Drawing Active' : '✏️ Mark My Field'}
                 </button>
-
-                <select
-                  value={layerMode}
-                  onChange={(e) => {
-                    audio.playClick();
-                    onLayerModeChange(e.target.value as LayerMode);
-                  }}
-                  className="bg-slate-950 text-emerald-300 font-mono text-xs font-bold border border-emerald-500/30 rounded-xl px-2.5 py-1.5 focus:outline-none"
-                >
-                  <option value="hazard">🚨 AI Hazard Composite</option>
-                  <option value="ndvi">🌿 NDVI Plant Health</option>
-                  <option value="ndmi">💧 NDMI Soil Moisture</option>
-                  <option value="thermal">🌡️ Surface Temperature</option>
-                  <option value="rgb">📷 Natural RGB</option>
-                </select>
               </div>
 
             </div>
 
-            {/* Simulated Satellite Map Canvas with 5x5 Parcels and Field Boundaries */}
-            <div className="relative h-96 sm:h-[480px] w-full rounded-2xl overflow-hidden border border-emerald-500/30 shadow-inner group">
-              
-              {/* Background Imagery */}
+            {/* Instruction Banner */}
+            <div className="p-3 rounded-xl bg-[#EDF4EC] text-xs text-[#1F6B45] font-semibold flex items-center justify-between">
+              <span>👉 {isHi ? 'मैप को मूव करके अपने खेत पर पिन रखें।' : 'Move the map to place the pin on your field.'}</span>
+              <button
+                onClick={() => {
+                  audio.playClick();
+                  setLocationStatus('✅ आपका खेत सफलतापूर्वक सहेज लिया गया है!');
+                }}
+                className="groot-btn-primary px-3 py-1.5 text-xs font-bold"
+              >
+                📍 {isHi ? 'यह मेरा खेत है' : 'This Is My Farm'}
+              </button>
+            </div>
+
+            {/* Satellite Map Frame */}
+            <div className="relative h-96 sm:h-[460px] w-full rounded-xl overflow-hidden border border-[#DDE6DD] shadow-inner">
               <img
                 src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1400&auto=format&fit=crop&q=80"
-                alt="Satellite Farm View"
+                alt="Farm Satellite View"
                 className="w-full h-full object-cover"
               />
 
-              {/* Darkened overlay for contrast */}
-              <div className="absolute inset-0 bg-black/40" />
-
-              {/* 5x5 Grid Remote Sensing Overlay */}
-              {showSpectralOverlay && (
-                <div className="absolute inset-4 sm:inset-8 grid grid-cols-5 grid-rows-5 gap-1.5 p-2 bg-slate-950/40 backdrop-blur-[2px] rounded-2xl border-2 border-emerald-400/60 shadow-2xl">
-                  {zones.map((zone) => {
-                    const isSelected = selectedZone.id === zone.id;
-                    const isHot = zone.isHotspot;
-
-                    return (
-                      <button
-                        key={zone.id}
-                        onClick={() => {
-                          audio.playClick();
-                          onSelectZone(zone);
-                        }}
-                        className={`relative rounded-xl p-1 transition-all flex flex-col items-center justify-between ${
-                          isHot
-                            ? 'bg-rose-500/40 border-2 border-rose-400 animate-pulse'
-                            : zone.cropCondition === 'Healthy'
-                            ? 'bg-emerald-500/25 border border-emerald-500/50 hover:bg-emerald-500/40'
-                            : 'bg-amber-500/30 border border-amber-500/50 hover:bg-amber-500/45'
-                        } ${isSelected ? 'ring-4 ring-amber-300 scale-105 z-20 shadow-2xl' : ''}`}
-                      >
-                        <span className="text-[9px] font-mono font-black text-white bg-slate-950/80 px-1 py-0.2 rounded">
-                          {zone.id.replace('Zone ', '')}
-                        </span>
-                        
-                        <span className="text-[10px] font-mono font-bold text-white">
-                          {(zone.ndvi * 100).toFixed(0)}%
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Bottom Info Pill */}
-              <div className="absolute bottom-3 left-3 right-3 p-3 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="font-bold text-white">{currentPlot.name} • {variety.varietyName}</span>
-                </div>
-                <span className="text-emerald-400 font-mono font-bold">
-                  Target Parcel: {selectedZone.id} (NDVI: {selectedZone.ndvi})
-                </span>
+              {/* 5x5 Agricultural Grid Boundary Overlay */}
+              <div className="absolute inset-6 sm:inset-10 grid grid-cols-5 grid-rows-5 gap-1.5 p-2 bg-black/20 backdrop-blur-[1px] rounded-2xl border-2 border-[#F2B84B]">
+                {zones.map((zone) => {
+                  const isSelected = selectedZone.id === zone.id;
+                  const isHot = zone.isHotspot;
+                  return (
+                    <button
+                      key={zone.id}
+                      onClick={() => {
+                        audio.playClick();
+                        onSelectZone(zone);
+                      }}
+                      className={`relative rounded-lg p-1 transition-all flex flex-col items-center justify-center ${
+                        isHot
+                          ? 'bg-[#B94742]/40 border-2 border-[#B94742]'
+                          : zone.cropCondition === 'Healthy'
+                          ? 'bg-[#1F6B45]/25 border border-[#1F6B45]/50 hover:bg-[#1F6B45]/40'
+                          : 'bg-[#C57A10]/30 border border-[#C57A10]/50'
+                      } ${isSelected ? 'ring-4 ring-[#F2B84B] scale-105 z-10 shadow-lg' : ''}`}
+                    >
+                      <span className="text-[10px] font-bold text-white drop-shadow">
+                        {zone.id.replace('Zone ', '')}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
-            </div>
-
-            {/* Note on Google Maps / Satellite Architecture */}
-            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-              <Info className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-200 font-bold">Multi-Layer Architecture:</span> High-resolution satellite imagery provides visual farm boundary context, while Sentinel-2 MSI multispectral sensors generate real-time NDVI and water stress analytics.
+              {/* Pin Center Marker */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center">
+                <MapPin className="w-8 h-8 text-[#B94742] drop-shadow-lg animate-bounce" />
               </div>
+
             </div>
 
           </div>
         </div>
 
-        {/* Right: Field Parcels List & Boundary Info */}
+        {/* Right 4 Cols: Selected Field Summary */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="p-5 rounded-3xl bg-[#031108] border border-emerald-500/30 shadow-xl space-y-4">
-            <h3 className="text-base font-black text-white flex items-center justify-between">
-              <span>🌾 {isHi ? 'खेत के भाग (Field Boundaries)' : 'Farm Field Boundaries'}</span>
-              <span className="text-xs font-mono text-emerald-400 font-bold">
-                {currentPlot.fields?.length || 3} Fields
-              </span>
+          <div className="groot-card p-5 bg-white space-y-4">
+            <h3 className="text-base font-bold text-[#1B2520] pb-2 border-b border-[#DDE6DD]">
+              {isHi ? 'खेत के भाग व विवरण' : 'Farm Fields & Details'}
             </h3>
 
             <div className="space-y-2.5">
@@ -301,40 +251,30 @@ export const MyFarmPage: React.FC<MyFarmPageProps> = ({
                       audio.playClick();
                       setActiveFieldId(field.id);
                     }}
-                    className={`w-full p-3.5 rounded-2xl text-left border transition-all space-y-1.5 ${
+                    className={`w-full p-3.5 rounded-xl text-left border transition-all space-y-1 ${
                       isActive
-                        ? 'bg-emerald-500/20 border-emerald-400 shadow-md ring-1 ring-emerald-400/40'
-                        : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                        ? 'bg-[#EDF4EC] border-[#1F6B45] shadow-sm'
+                        : 'bg-[#F6F8F2] border-[#DDE6DD] hover:border-[#66756D]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-white text-xs">{field.name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        field.healthStatus === 'good'
-                          ? 'bg-emerald-500/20 text-emerald-300'
-                          : 'bg-amber-500/20 text-amber-300'
-                      }`}>
-                        {field.healthStatus === 'good' ? '🟢 Good' : '🟡 Attention'}
+                      <span className="font-bold text-sm text-[#1B2520]">{field.name}</span>
+                      <span className="text-xs font-bold text-[#1F6B45]">
+                        {field.areaAcres} Acres
                       </span>
                     </div>
-
-                    <div className="text-[11px] text-slate-300">
+                    <div className="text-xs text-[#66756D]">
                       {field.cropName} • {field.varietyName}
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-800/80">
-                      <span>Area: {field.areaAcres} Acres</span>
-                      <span>Sowing: {field.sowingDaysAgo}d ago</span>
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1 text-slate-300">
-              <div className="font-bold text-white">📍 Farm Coordinates:</div>
-              <div className="font-mono text-[11px] text-emerald-400">{currentPlot.latitude}° N, {currentPlot.longitude}° E</div>
-              <div className="text-[10px] text-slate-400 pt-1">Total Plot Area: {currentPlot.areaHa} Hectares ({Math.round(currentPlot.areaHa * 2.47)} Acres)</div>
+            <div className="p-3.5 rounded-xl bg-[#F6F8F2] border border-[#DDE6DD] text-xs text-[#66756D] space-y-1">
+              <div className="font-bold text-[#1B2520]">📍 Farm Location:</div>
+              <div>{currentPlot.locationName}</div>
+              <div>Total Land: {currentPlot.areaHa ? `${Math.round(currentPlot.areaHa * 2.47)} Acres` : '2.3 Acres'}</div>
             </div>
 
           </div>

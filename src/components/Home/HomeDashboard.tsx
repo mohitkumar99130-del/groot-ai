@@ -2,14 +2,11 @@ import React from 'react';
 import { 
   Mic, 
   Camera, 
-  HeartPulse, 
-  Droplets, 
-  CloudSun, 
   ArrowRight, 
-  Calendar, 
-  ChevronRight, 
+  MapPin, 
   Sprout, 
-  MapPin
+  Sparkles, 
+  ChevronRight
 } from 'lucide-react';
 import { 
   AppLanguage, 
@@ -24,15 +21,14 @@ import {
 } from '../../types/groot';
 import { CropVariety } from '../../types/crops';
 import { audio } from '../../services/audioService';
-import { INITIAL_DAILY_ACTIONS } from '../../services/farmService';
 
 interface HomeDashboardProps {
   currentPlot: FarmPlot;
   variety: CropVariety;
   fusion: FusionResult;
-  zone: FieldZone;
+  zone?: FieldZone;
   telemetry: SensorTelemetry;
-  leaf: LeafSample;
+  leaf?: LeafSample;
   weather: RealtimeWeather;
   language: AppLanguage;
   farmerProfile?: FarmerProfile;
@@ -40,8 +36,6 @@ interface HomeDashboardProps {
   onOpenCamera: () => void;
   onOpenCropSelector: () => void;
   onNavigateTab: (tab: AppNavigationTab) => void;
-  onRefreshWeather?: () => void;
-  isWeatherLoading?: boolean;
 }
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
@@ -51,6 +45,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   telemetry,
   weather,
   language,
+  farmerProfile,
   onOpenVoice,
   onOpenCamera,
   onOpenCropSelector,
@@ -59,131 +54,133 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const isHi = language === 'hi';
   const isHighRisk = fusion.riskPercentage > 50;
 
-  // Subtitle translations for Voice & Camera actions
-  const getVoiceSubtitle = () => {
-    switch (language) {
-      case 'hi': return 'बोलकर पूछें / Ask by speaking';
-      case 'pa': return 'ਬੋਲ ਕੇ ਪੁੱਛੋ / Ask by speaking';
-      case 'bn': return 'কথা বলে জানুন / Ask by speaking';
-      case 'te': return 'మాట్లాడి అడగండి / Ask by speaking';
-      case 'ta': return 'பேசி கேளுங்கள் / Ask by speaking';
-      case 'mr': return 'बोलून विचारा / Ask by speaking';
-      case 'gu': return 'બોલીને પૂછો / Ask by speaking';
-      case 'kn': return 'ಮಾತನಾಡಿ ಕೇಳಿ / Ask by speaking';
-      case 'ml': return 'സംസാരിച്ചു ചോദിക്കൂ / Ask by speaking';
-      case 'or': return 'କହି ପଚାରନ୍ତୁ / Ask by speaking';
-      case 'as': return 'কথা কৈ সোধক / Ask by speaking';
-      case 'hinglish': return 'Bolkar poochhein / Ask naturally';
-      case 'en':
-      default: return 'Ask questions naturally by speaking';
+  // Simple, non-technical moisture status
+  const getMoistureStatus = () => {
+    if (telemetry.soilMoisture < 30) {
+      return { text: isHi ? 'कम है (सिंचाई करें)' : 'Low (Needs Water)', color: 'text-[#B94742]', badge: '🔴' };
     }
+    if (telemetry.soilMoisture < 50) {
+      return { text: isHi ? 'थोड़ा कम' : 'Slightly Low', color: 'text-[#C57A10]', badge: '🟡' };
+    }
+    return { text: isHi ? 'पर्याप्त है' : 'Adequate', color: 'text-[#2F7D4A]', badge: '🟢' };
   };
 
-  const getCameraSubtitle = () => {
-    switch (language) {
-      case 'hi': return 'फसल की फोटो लेकर जांच करें';
-      case 'pa': return 'ਫ਼ਸਲ ਦੀ ਫੋਟੋ ਖਿੱਚ ਕੇ ਜਾਂਚ ਕਰੋ';
-      case 'bn': return 'ফসলের ছবি তুলে পরীক্ষা করুন';
-      case 'te': return 'పంట ఫోటో తీసి పరిశీలించండి';
-      case 'ta': return 'பயிரின் படம் எடுத்து சோதிக்கவும்';
-      case 'mr': return 'पिकाचा फोटो काढून तपासणी करा';
-      case 'gu': return 'પાકનો ફોટો લઈને તપાસો';
-      case 'kn': return 'ಬೆಳೆಯ ಫೋಟೋ ತೆಗೆದು ಪರೀಕ್ಷಿಸಿ';
-      case 'ml': return 'വിളയുടെ ഫോട്ടോ എടുത്ത് പരിശോധിക്കൂ';
-      case 'or': return 'ଫସଲର ଫଟୋ ନେଇ ପରୀକ୍ଷା କରନ୍ତୁ';
-      case 'as': return 'শস্যৰ ফটো তুলি পৰীক্ষা কৰক';
-      case 'hinglish': return 'Fasal ki photo lekar jaanch karein';
-      case 'en':
-      default: return 'Take or upload leaf photo to diagnose disease';
+  const moistureStatus = getMoistureStatus();
+
+  // Simple GROOT conversational advice
+  const getGrootAdvice = () => {
+    if (telemetry.soilMoisture < 30) {
+      return isHi 
+        ? 'मिट्टी सूखी लग रही है। कल सुबह 6 से 9 बजे के बीच खेत में हल्की सिंचाई कर लेना अच्छा रहेगा।'
+        : 'Soil moisture is low. Scheduling light irrigation tomorrow morning is recommended.';
     }
+    if (isHighRisk) {
+      return isHi
+        ? 'फसल कुल मिलाकर ठीक है, लेकिन एक हिस्से में हल्के पीले धब्बे दिख रहे हैं। एक बार खेत में जाकर पत्ते देख लें।'
+        : 'Crop is generally good, but some early yellowing is observed. Inspect field leaves today.';
+    }
+    return isHi
+      ? 'आपकी फसल बहुत अच्छी चल रही है। मौसम साफ़ है, नियमित देखभाल बनाए रखें।'
+      : 'Your crop is healthy and growing well. Weather is clear for routine field operations.';
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6 animate-in fade-in duration-150 max-w-[1400px] mx-auto">
       
       {/* ========================================================================= */}
-      {/* SECTION 1: YOUR ACTIVE CROP (LARGE HIGHLY VISIBLE CARD)                   */}
+      {/* 1. GREETING SECTION (CLEAN, NO GIANT HERO BANNER)                         */}
       {/* ========================================================================= */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#021f10] via-[#04190e] to-slate-950 border-2 border-emerald-500/40 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B2520] tracking-tight">
+            {isHi ? `नमस्ते ${farmerProfile?.name ? farmerProfile.name.split(' ')[0] : ''} 👋` : `Namaste ${farmerProfile?.name ? farmerProfile.name.split(' ')[0] : ''} 👋`}
+          </h1>
+          <p className="text-sm sm:text-base text-[#66756D] font-medium mt-0.5">
+            {isHi ? 'आज आपकी फसल का हाल देखते हैं' : 'Here is your farm and crop update for today'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#1F6B45] bg-[#EDF4EC] px-3.5 py-2 rounded-xl border border-[#DDE6DD] w-fit">
+          <MapPin className="w-4 h-4 text-[#1F6B45]" />
+          <span>{currentPlot.locationName}</span>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. ACTIVE CROP CARD (LARGE, BEAUTIFUL, SIMPLE)                            */}
+      {/* ========================================================================= */}
+      <div className="groot-card p-5 sm:p-6 bg-white overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           
-          {/* Left: Crop Photo/Icon + Crop Name + Variety + Field Name */}
+          {/* Left: Visual Crop Photo + Crop Details */}
           <div className="flex items-start sm:items-center gap-4">
-            <div className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-emerald-400/20 via-emerald-500/20 to-teal-500/10 border border-emerald-400/40 text-4xl sm:text-5xl shadow-inner shrink-0">
-              {variety.iconEmoji || '🌾'}
-              <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase font-mono shadow-md">
-                ACTIVE
+            
+            {/* 16:9 / 4:3 Crop Photo */}
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-[#EDF4EC] shrink-0 border border-[#DDE6DD] shadow-sm">
+              <img
+                src={
+                  variety.cropFamilyId === 'wheat' 
+                    ? 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&auto=format&fit=crop&q=80'
+                    : variety.cropFamilyId === 'rice'
+                    ? 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=400&auto=format&fit=crop&q=80'
+                    : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&auto=format&fit=crop&q=80'
+                }
+                alt={variety.cropName}
+                className="w-full h-full object-cover"
+              />
+              <span className="absolute bottom-1 right-1 text-xl drop-shadow-md">
+                {variety.iconEmoji || '🌾'}
               </span>
             </div>
 
-            <div className="space-y-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">
-                  {isHi ? 'आपकी सक्रिय फसल' : 'YOUR ACTIVE CROP'}
-                </span>
-                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
-                  isHighRisk 
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
-                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                }`}>
-                  {isHighRisk ? '🔴 Action Needed' : '🟢 Good Health'}
-                </span>
+            {/* Crop Info */}
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-[#66756D] uppercase tracking-wider">
+                {isHi ? 'आपकी फसल • YOUR CROP' : 'YOUR ACTIVE CROP'}
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                <span>{isHi ? variety.cropHindi : variety.cropName}</span>
-                <span className="text-emerald-400 font-medium text-base sm:text-lg">
-                  ({isHi ? variety.varietyHindi : variety.varietyName})
-                </span>
+              <h2 className="text-xl sm:text-2xl font-black text-[#1B2520] tracking-tight">
+                {variety.cropName} <span className="text-[#1F6B45] font-semibold text-lg sm:text-xl">/ {variety.cropHindi}</span>
               </h2>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 font-sans pt-0.5">
-                <span className="flex items-center gap-1 font-semibold text-slate-200">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                  {currentPlot.name}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <span className="text-xs font-bold text-[#1B2520] px-2.5 py-1 rounded-lg bg-[#EDF4EC] border border-[#DDE6DD]">
+                  {variety.varietyHindi || variety.varietyName || 'General Variety'}
                 </span>
-                <span className="text-slate-600">•</span>
-                <span className="flex items-center gap-1 text-amber-300 font-medium">
-                  <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                  {isHi ? 'बुवाई: 42 दिन पहले (Tillering)' : 'Sown: 42 days ago (Tillering Stage)'}
+
+                <span className={`text-xs font-bold px-3 py-1 rounded-lg border flex items-center gap-1.5 ${
+                  isHighRisk 
+                    ? 'bg-[#C57A10]/15 text-[#C57A10] border-[#C57A10]/30'
+                    : 'bg-[#2F7D4A]/15 text-[#2F7D4A] border-[#2F7D4A]/30'
+                }`}>
+                  <span>{isHighRisk ? '🟡' : '🟢'}</span>
+                  <span>{isHighRisk ? (isHi ? 'ध्यान देने की जरूरत' : 'Needs Attention') : (isHi ? 'फसल ठीक है' : 'Crop is Healthy')}</span>
                 </span>
               </div>
             </div>
+
           </div>
 
-          {/* Right: Actions (Change Crop + View Crop Health) */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 lg:pt-0">
-            <button
-              onClick={() => {
-                audio.playClick();
-                onOpenCropSelector();
-              }}
-              className="flex-1 sm:flex-initial px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-100 hover:text-white border border-emerald-500/30 hover:border-emerald-400 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 min-h-[48px]"
-            >
-              <Sprout className="w-4 h-4 text-emerald-400" />
-              <span>{isHi ? 'फसल बदलें (Change Crop)' : 'Change Crop'}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                audio.playClick();
-                onNavigateTab('crop_health');
-              }}
-              className="flex-1 sm:flex-initial px-4 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-extrabold shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 min-h-[48px]"
-            >
-              <span>{isHi ? 'फसल सेहत देखें' : 'View Crop Health'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+          {/* Right: Change Crop Action Button */}
+          <button
+            onClick={() => {
+              audio.playClick();
+              onOpenCropSelector();
+            }}
+            className="groot-btn-secondary px-5 py-3 text-sm font-bold w-full md:w-auto"
+          >
+            <Sprout className="w-4 h-4 text-[#1F6B45] mr-2" />
+            <span>{isHi ? 'फसल बदलें (Change Crop)' : 'Change Crop'}</span>
+            <ArrowRight className="w-4 h-4 ml-1 text-[#66756D]" />
+          </button>
 
         </div>
       </div>
 
-
       {/* ========================================================================= */}
-      {/* SECTION 2: TWO LARGE PRIMARY ACTIONS (VOICE + CAMERA)                     */}
+      {/* 3. TWO LARGE PRIMARY ACTIONS (50 / 50 DESKTOP, 1-COL MOBILE)               */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         
         {/* Action 1: 🎙️ Ask GROOT */}
         <button
@@ -191,24 +188,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             audio.playClick();
             onOpenVoice();
           }}
-          className="group relative p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-amber-500/15 via-amber-600/10 to-slate-950 border-2 border-amber-400/50 hover:border-amber-400 shadow-xl shadow-amber-500/10 text-left transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-5 min-h-[110px]"
+          className="p-6 sm:p-7 rounded-2xl bg-white border-2 border-[#1F6B45]/30 hover:border-[#1F6B45] shadow-[0_4px_16px_rgba(31,107,69,0.08)] hover:shadow-[0_8px_24px_rgba(31,107,69,0.14)] text-left transition-all group flex items-center gap-5 min-h-[110px]"
         >
-          <div className="relative flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-3xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform shrink-0 ring-4 ring-amber-400/20">
-            <Mic className="w-8 h-8 text-slate-950" />
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full animate-ping" />
+          <div className="flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#1F6B45] text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
+            <Mic className="w-8 h-8 text-white" />
           </div>
 
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/40 uppercase">
-                1-TAP VOICE • बोलकर पूछें
-              </span>
-            </div>
-            <h3 className="text-lg sm:text-xl font-black text-white tracking-tight group-hover:text-amber-300 transition-colors">
-              🎙️ {isHi ? 'GROOT से बोलकर पूछें' : 'Ask GROOT by Voice'}
+          <div className="space-y-1">
+            <h3 className="text-lg sm:text-xl font-black text-[#1B2520] group-hover:text-[#1F6B45] transition-colors flex items-center gap-2">
+              <span>🎙️ {isHi ? 'GROOT से बोलकर पूछें' : 'Ask GROOT'}</span>
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 font-medium">
-              "{getVoiceSubtitle()}"
+            <p className="text-xs sm:text-sm text-[#66756D] font-medium leading-relaxed">
+              {isHi ? 'बोलकर अपनी फसल के बारे में पूछें' : 'Ask questions naturally by speaking'}
             </p>
           </div>
         </button>
@@ -219,178 +210,112 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             audio.playClick();
             onOpenCamera();
           }}
-          className="group relative p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-teal-600/10 to-slate-950 border-2 border-emerald-400/50 hover:border-emerald-400 shadow-xl shadow-emerald-500/10 text-left transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-5 min-h-[110px]"
+          className="p-6 sm:p-7 rounded-2xl bg-white border-2 border-[#DDE6DD] hover:border-[#1F6B45] shadow-[0_4px_16px_rgba(24,55,38,0.06)] hover:shadow-[0_8px_24px_rgba(31,107,69,0.12)] text-left transition-all group flex items-center gap-5 min-h-[110px]"
         >
-          <div className="relative flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform shrink-0 ring-4 ring-emerald-400/20">
-            <Camera className="w-8 h-8 text-slate-950" />
+          <div className="flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#EDF4EC] text-[#1F6B45] border border-[#DDE6DD] group-hover:scale-105 transition-transform shrink-0">
+            <Camera className="w-8 h-8 text-[#1F6B45]" />
           </div>
 
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-400/20 text-emerald-300 border border-emerald-400/40 uppercase">
-                AI SCANNER • फोटो जांच
-              </span>
-            </div>
-            <h3 className="text-lg sm:text-xl font-black text-white tracking-tight group-hover:text-emerald-300 transition-colors">
-              📷 {isHi ? 'पत्ती की फोटो से जांचें' : 'Check Crop by Photo'}
+          <div className="space-y-1">
+            <h3 className="text-lg sm:text-xl font-black text-[#1B2520] group-hover:text-[#1F6B45] transition-colors flex items-center gap-2">
+              <span>📷 {isHi ? 'फसल जांचें' : 'Check Crop'}</span>
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 font-medium">
-              "{getCameraSubtitle()}"
+            <p className="text-xs sm:text-sm text-[#66756D] font-medium leading-relaxed">
+              {isHi ? 'फसल की फोटो लेकर जांच करें' : 'Take a photo of leaf to diagnose disease'}
             </p>
           </div>
         </button>
 
       </div>
 
-
       {/* ========================================================================= */}
-      {/* SECTION 3: TODAY'S STATUS SUMMARY (3 SIMPLE STATUS CARDS)                 */}
+      {/* 4. TODAY CARD (ONE SIMPLE COMBINED CARD WITH GROOT ADVICE)                */}
       {/* ========================================================================= */}
-      <div>
-        <div className="flex items-center justify-between pb-3 px-1">
-          <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-2">
-            <span>📊 {isHi ? 'आज का संक्षिप्त हाल (Today\'s Status)' : 'Today\'s Status Overview'}</span>
+      <div className="groot-card p-5 sm:p-6 bg-white space-y-4">
+        
+        <div className="flex items-center justify-between pb-2 border-b border-[#DDE6DD]">
+          <h3 className="text-base sm:text-lg font-black text-[#1B2520] flex items-center gap-2">
+            <span>📊 {isHi ? 'आज का हाल (Today\'s Status)' : 'Today\'s Farm Status'}</span>
           </h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {/* Status 1: Crop Health */}
-          <button
-            onClick={() => {
-              audio.playClick();
-              onNavigateTab('crop_health');
-            }}
-            className="p-5 rounded-3xl bg-[#03140a] border border-emerald-500/30 hover:border-emerald-400 text-left transition-all group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-emerald-400 font-bold uppercase">
-                {isHi ? 'फसल सेहत' : 'Crop Health'}
-              </span>
-              <HeartPulse className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-2xl font-black text-white mt-2">
-              {fusion.healthScore}<span className="text-xs text-slate-400 font-normal">/100</span>
-            </div>
-            <div className="text-xs font-bold text-emerald-300 mt-1 flex items-center gap-1">
-              {isHighRisk ? '🟠 Attention Needed in Sector C4' : '🟢 Crop is Healthy & Vigorous'}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between pt-2 border-t border-slate-800">
-              <span>{isHi ? 'विस्तार देखें' : 'View Full Details'}</span>
-              <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
-            </div>
-          </button>
-
-          {/* Status 2: Water in Soil */}
-          <button
-            onClick={() => {
-              audio.playClick();
-              onNavigateTab('water_irrigation');
-            }}
-            className="p-5 rounded-3xl bg-[#03140a] border border-cyan-500/30 hover:border-cyan-400 text-left transition-all group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-cyan-400 font-bold uppercase">
-                {isHi ? 'मिट्टी में नमी' : 'Water in Soil'}
-              </span>
-              <Droplets className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-2xl font-black text-white mt-2">
-              {telemetry.soilMoisture.toFixed(0)}<span className="text-xs text-slate-400 font-normal">%</span>
-            </div>
-            <div className="text-xs font-bold text-cyan-300 mt-1">
-              {telemetry.soilMoisture < 30 ? '🔴 Water Stress Detected' : '🟢 Moisture is Balanced'}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between pt-2 border-t border-slate-800">
-              <span>{isHi ? 'सिंचाई सलाह' : 'Irrigation Advice'}</span>
-              <ChevronRight className="w-3.5 h-3.5 text-cyan-400" />
-            </div>
-          </button>
-
-          {/* Status 3: Today's Weather */}
-          <button
-            onClick={() => {
-              audio.playClick();
-              onNavigateTab('weather');
-            }}
-            className="p-5 rounded-3xl bg-[#03140a] border border-amber-500/30 hover:border-amber-400 text-left transition-all group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-amber-400 font-bold uppercase">
-                {isHi ? 'आज का मौसम' : 'Today\'s Weather'}
-              </span>
-              <CloudSun className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-2xl font-black text-white mt-2">
-              {weather.temperature}°C
-            </div>
-            <div className="text-xs font-bold text-amber-300 mt-1">
-              {isHi ? weather.conditionHindi : weather.condition} • {weather.sprayAdvisory}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between pt-2 border-t border-slate-800">
-              <span>{isHi ? 'मौसम पूर्वानुमान' : '7-Day Forecast'}</span>
-              <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
-            </div>
-          </button>
-
-        </div>
-      </div>
-
-
-      {/* ========================================================================= */}
-      {/* SECTION 4: WHAT TO DO TODAY (MAX 3 INTELLIGENT ACTIONS)                    */}
-      {/* ========================================================================= */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-[#031108] border border-emerald-500/30 shadow-xl space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">✅</span>
-            <h3 className="text-base sm:text-lg font-black text-white">
-              {isHi ? 'आज क्या करें? (What To Do Today)' : 'What To Do Today'}
-            </h3>
-          </div>
-          <span className="text-[11px] font-mono text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40">
-            3 Priority Actions
+          <span className="text-xs font-semibold text-[#66756D]">
+            Live Met & Sensors
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {INITIAL_DAILY_ACTIONS.map((action, idx) => (
+        {/* 3 Status Points in One Card */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          
+          {/* Status 1: Crop */}
+          <div className="p-4 rounded-xl bg-[#F6F8F2] border border-[#DDE6DD] space-y-1">
+            <div className="text-xs font-bold text-[#66756D] flex items-center gap-1.5">
+              <span>❤️ {isHi ? 'फसल सेहत' : 'Crop Vitality'}</span>
+            </div>
+            <div className="text-base sm:text-lg font-black text-[#1B2520]">
+              {isHighRisk ? (isHi ? '🟡 ध्यान दें' : '🟡 Needs Attention') : (isHi ? '🟢 अच्छी है' : '🟢 Healthy')}
+            </div>
+          </div>
+
+          {/* Status 2: Water */}
+          <div className="p-4 rounded-xl bg-[#F6F8F2] border border-[#DDE6DD] space-y-1">
+            <div className="text-xs font-bold text-[#66756D] flex items-center gap-1.5">
+              <span>💧 {isHi ? 'पानी / नमी' : 'Soil Moisture'}</span>
+            </div>
+            <div className={`text-base sm:text-lg font-black ${moistureStatus.color}`}>
+              {moistureStatus.badge} {moistureStatus.text}
+            </div>
+          </div>
+
+          {/* Status 3: Weather */}
+          <div className="p-4 rounded-xl bg-[#F6F8F2] border border-[#DDE6DD] space-y-1">
+            <div className="text-xs font-bold text-[#66756D] flex items-center gap-1.5">
+              <span>🌤️ {isHi ? 'आज का मौसम' : 'Weather'}</span>
+            </div>
+            <div className="text-base sm:text-lg font-black text-[#1B2520]">
+              {weather.temperature}°C • {isHi ? weather.conditionHindi : weather.condition}
+            </div>
+          </div>
+
+        </div>
+
+        {/* GROOT ki salah (in Soft Green Surface) */}
+        <div className="p-4 sm:p-5 rounded-xl bg-[#EDF4EC] border border-[#DDE6DD] space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#1F6B45] uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-[#1F6B45]" />
+              <span>{isHi ? 'GROOT की सलाह' : 'GROOT ADVICE'}</span>
+            </div>
+
             <button
-              key={action.id}
               onClick={() => {
                 audio.playClick();
-                onNavigateTab(action.targetTab);
+                onNavigateTab('crop_health');
               }}
-              className="p-4 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/40 text-left transition-all flex items-start gap-3 group"
+              className="text-xs font-bold text-[#1F6B45] hover:text-[#174F35] flex items-center gap-1 underline"
             >
-              <span className="text-2xl shrink-0 group-hover:scale-110 transition-transform">
-                {action.icon}
-              </span>
-              <div className="min-w-0 space-y-1">
-                <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors line-clamp-1">
-                  {idx + 1}. {isHi ? action.titleHi : action.titleEn}
-                </div>
-                <div className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
-                  {isHi ? action.actionHi : action.actionEn}
-                </div>
-              </div>
+              <span>{isHi ? 'और देखें' : 'View More'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
-          ))}
+          </div>
+
+          <p className="text-sm sm:text-base text-[#1B2520] font-medium leading-relaxed">
+            "{getGrootAdvice()}"
+          </p>
         </div>
+
       </div>
 
-
       {/* ========================================================================= */}
-      {/* SECTION 5: MY FARM PREVIEW (LARGE CLEAN SATELLITE VIEW)                   */}
+      {/* 5. MERA KHET (SATELLITE FARM MAP DIRECTLY ON DASHBOARD)                   */}
       {/* ========================================================================= */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-[#031108] border border-emerald-500/30 shadow-xl space-y-4">
+      <div className="groot-card p-5 sm:p-6 bg-white space-y-4">
+        
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
-              <span>🗺️ {isHi ? 'मेरा खेत नक्शा (My Farm Satellite Preview)' : 'My Farm Satellite View'}</span>
+            <h3 className="text-base sm:text-lg font-black text-[#1B2520] flex items-center gap-2">
+              <span>🗺️ {isHi ? 'मेरा खेत (Mera Khet - Satellite View)' : 'My Farm Satellite Map'}</span>
             </h3>
-            <p className="text-xs text-slate-400">
-              📍 {currentPlot.locationName} • {currentPlot.areaHa} Ha • {variety.varietyName}
+            <p className="text-xs text-[#66756D]">
+              📍 {currentPlot.locationName} • {currentPlot.areaHa ? `${Math.round(currentPlot.areaHa * 2.47)} Acres` : '2.3 Acres'}
             </p>
           </div>
 
@@ -399,53 +324,51 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               audio.playClick();
               onNavigateTab('my_farm');
             }}
-            className="px-4 py-2 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all flex items-center gap-2 w-fit"
+            className="groot-btn-primary px-4 py-2.5 text-xs font-bold w-fit"
           >
-            <span>{isHi ? 'पूरा खेत नक्शा खोलें' : 'Open Full Farm Map'}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>{isHi ? 'खेत खोलें (Open Farm)' : 'Open Farm'}</span>
+            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
           </button>
         </div>
 
-        {/* Satellite Map Preview Frame */}
+        {/* Real Satellite Map View Canvas */}
         <div 
           onClick={() => {
             audio.playClick();
             onNavigateTab('my_farm');
           }}
-          className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden border border-emerald-500/30 cursor-pointer group shadow-2xl"
+          className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden border border-[#DDE6DD] cursor-pointer group shadow-sm"
         >
-          {/* Satellite Base Imagery */}
           <img
-            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&auto=format&fit=crop&q=80"
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1400&auto=format&fit=crop&q=80"
             alt="Farm Satellite View"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
           />
 
-          {/* Overlay Gradient & Field Grid Indicator */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#020e06]/90 via-transparent to-black/30" />
-
-          {/* Polygon Field Box Simulator */}
-          <div className="absolute inset-8 sm:inset-16 border-2 border-dashed border-emerald-400 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-            <div className="px-3 py-1.5 rounded-xl bg-slate-950/90 border border-emerald-400 text-emerald-300 text-xs font-bold font-mono shadow-2xl flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>{currentPlot.name} • {variety.varietyName}</span>
+          {/* Polygon Field Boundary Overlay Box */}
+          <div className="absolute inset-8 sm:inset-14 border-2 border-dashed border-[#F2B84B] bg-[#1F6B45]/15 rounded-2xl flex items-center justify-center">
+            <div className="px-3.5 py-1.5 rounded-xl bg-white/95 text-[#1B2520] text-xs font-bold border border-[#DDE6DD] shadow-md flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1F6B45] animate-ping" />
+              <span>{currentPlot.name} • {variety.varietyName || variety.cropName}</span>
             </div>
           </div>
 
-          {/* Bottom Card Inside Map Preview */}
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between p-3 rounded-xl bg-slate-950/90 backdrop-blur-md border border-slate-800 text-xs">
+          {/* Bottom Card Inside Satellite Preview */}
+          <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#DDE6DD] flex items-center justify-between text-xs shadow-md">
             <div className="flex items-center gap-2">
-              <span className="text-base">{variety.iconEmoji || '🌾'}</span>
+              <span className="text-xl">{variety.iconEmoji || '🌾'}</span>
               <div>
-                <div className="font-bold text-white">{currentPlot.name}</div>
-                <div className="text-[10px] text-emerald-400 font-mono">Field Health: {fusion.healthScore}% • Good</div>
+                <div className="font-bold text-[#1B2520]">{currentPlot.name}</div>
+                <div className="text-[11px] text-[#66756D]">{variety.cropName} • {variety.varietyName || 'General'} • 2.3 acres</div>
               </div>
             </div>
-            <span className="text-emerald-400 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              {isHi ? 'नक्शा देखें' : 'View Map'} <ArrowRight className="w-3.5 h-3.5" />
+            <span className="text-[#1F6B45] font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              {isHi ? 'खेत नक्शा देखें' : 'Open Map'} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
+
         </div>
+
       </div>
 
     </div>

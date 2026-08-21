@@ -4,159 +4,116 @@
 
 @layer base {
   :root {
-    --agri-bg: #040c07;
-    --agri-surface: #08160e;
-    --agri-surface-elevated: #0d2116;
-    --agri-border: rgba(16, 185, 129, 0.16);
-    --agri-emerald: #10b981;
-    --agri-cyan: #06b6d4;
-    --agri-amber: #f59e0b;
-    --agri-red: #ef4444;
+    --groot-primary: #1F6B45;
+    --groot-primary-dark: #174F35;
+    --groot-accent: #F2B84B;
+    --groot-bg: #F6F8F2;
+    --groot-surface: #FFFFFF;
+    --groot-surface-soft: #EDF4EC;
+    --groot-text-main: #1B2520;
+    --groot-text-secondary: #66756D;
+    --groot-border: #DDE6DD;
+    --groot-success: #2F7D4A;
+    --groot-warning: #C57A10;
+    --groot-danger: #B94742;
   }
 
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
-    color-scheme: dark;
   }
 
   body {
-    background-color: var(--agri-bg);
-    background-image: 
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.08), transparent 70%),
-      radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05), transparent 50%),
-      linear-gradient(to bottom, #040c07 0%, #07160e 100%);
-    background-attachment: fixed;
-    color: #f1f5f9;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F6F8F2;
+    color: #1B2520;
+    font-family: 'Inter', 'Noto Sans Devanagari', 'Noto Sans', system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
     min-height: 100vh;
   }
 }
 
-/* World-Class Agritech Glass Surfaces */
-.agri-card {
-  background: rgba(8, 22, 14, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(16, 185, 129, 0.16);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+/* GROOT V2 Design System Cards & Buttons */
+.groot-card {
+  background-color: #FFFFFF;
+  border: 1px solid #DDE6DD;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(24, 55, 38, 0.06);
+  transition: all 0.2s ease-in-out;
 }
 
-.agri-card-elevated {
-  background: linear-gradient(145deg, rgba(13, 33, 22, 0.82) 0%, rgba(6, 18, 11, 0.88) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(52, 211, 153, 0.24);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+.groot-card-elevated {
+  background-color: #FFFFFF;
+  border: 1px solid #DDE6DD;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(24, 55, 38, 0.10);
+  transition: all 0.2s ease-in-out;
 }
 
-.agri-card-subtle {
-  background: rgba(4, 14, 8, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+.groot-card-soft-green {
+  background-color: #EDF4EC;
+  border: 1px solid #DDE6DD;
+  border-radius: 16px;
 }
 
-.agri-card-hover {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.agri-card-hover:hover {
-  border-color: rgba(52, 211, 153, 0.4);
-  box-shadow: 0 16px 36px -8px rgba(16, 185, 129, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-/* Tactile Precision Buttons */
-.btn-agri-primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #022c22;
+.groot-btn-primary {
+  background-color: #1F6B45;
+  color: #FFFFFF;
   font-weight: 700;
-  border: 1px solid rgba(167, 243, 208, 0.6);
-  box-shadow: 0 6px 20px -4px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  transition: all 0.18s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
 }
-.btn-agri-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px -4px rgba(16, 185, 129, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+.groot-btn-primary:hover {
+  background-color: #174F35;
 }
-.btn-agri-primary:active {
-  transform: translateY(0) scale(0.98);
+.groot-btn-primary:active {
+  transform: scale(0.98);
 }
 
-.btn-agri-secondary {
-  background: rgba(9, 26, 16, 0.8);
-  color: #a7f3d0;
+.groot-btn-secondary {
+  background-color: #FFFFFF;
+  color: #1B2520;
+  border: 1px solid #DDE6DD;
   font-weight: 600;
-  border: 1px solid rgba(52, 211, 153, 0.28);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  transition: all 0.18s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
 }
-.btn-agri-secondary:hover {
-  background: rgba(16, 185, 129, 0.18);
-  border-color: rgba(52, 211, 153, 0.6);
-  color: #ffffff;
+.groot-btn-secondary:hover {
+  background-color: #EDF4EC;
+  border-color: #1F6B45;
+}
+
+.groot-btn-voice {
+  background: linear-gradient(135deg, #1F6B45 0%, #174F35 100%);
+  color: #FFFFFF;
+  border: 2px solid #F2B84B;
+  box-shadow: 0 4px 16px rgba(31, 107, 69, 0.25);
+  transition: all 0.2s ease-in-out;
+}
+.groot-btn-voice:hover {
   transform: translateY(-1px);
-}
-.btn-agri-secondary:active {
-  transform: translateY(0) scale(0.98);
+  box-shadow: 0 8px 24px rgba(31, 107, 69, 0.35);
 }
 
-.btn-agri-voice {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #1e1102;
-  font-weight: 800;
-  border: 1px solid rgba(253, 230, 138, 0.8);
-  box-shadow: 0 6px 20px -4px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.btn-agri-voice:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px -4px rgba(245, 158, 11, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-}
-.btn-agri-voice:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* Radar & Grid Pattern */
-.radar-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(16, 185, 129, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(16, 185, 129, 0.08) 1px, transparent 1px);
-}
-
-/* Pulse animation helper */
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3), inset 0 0 15px rgba(16, 185, 129, 0.1);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(16, 185, 129, 0.6), inset 0 0 25px rgba(16, 185, 129, 0.2);
-  }
-}
-.pulse-glow {
-  animation: pulseGlow 3s infinite;
-}
-
-/* High Precision Custom Scrollbars */
+/* Custom Clean Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(4, 12, 7, 0.8);
+  background: #F6F8F2;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.3);
-  border-radius: 9999px;
+  background: #DDE6DD;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(52, 211, 153, 0.6);
+  background: #66756D;
 }
-
-/* Leaflet/Map Viewport Tweaks */
-.leaflet-container {
-  font-family: inherit;
-}
-

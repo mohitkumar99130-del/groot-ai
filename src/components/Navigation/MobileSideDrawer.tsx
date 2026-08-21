@@ -2,15 +2,12 @@ import React from 'react';
 import { 
   X, 
   Home, 
-  Sprout, 
   Map, 
+  Sprout, 
   HeartPulse, 
-  Bug, 
-  Droplets, 
-  CloudSun, 
-  TrendingUp, 
-  FileText, 
-  Settings
+  Mic, 
+  Settings,
+  ChevronRight
 } from 'lucide-react';
 import { AppNavigationTab, AppLanguage, FarmPlot } from '../../types/groot';
 import { CropVariety } from '../../types/crops';
@@ -35,7 +32,6 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
   onTabChange,
   selectedVariety,
   onOpenCropSelector,
-  currentPlot,
   language,
   hotspotCount,
 }) => {
@@ -47,86 +43,59 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
     {
       id: 'home',
       labelHi: '🏠 मुख्य पृष्ठ (Home)',
-      labelEn: '🏠 Home Dashboard',
-      icon: <Home className="w-5 h-5 text-emerald-400" />,
-    },
-    {
-      id: 'my_crops',
-      labelHi: '🌾 मेरी फसलें (My Crops)',
-      labelEn: '🌾 My Crops',
-      icon: <Sprout className="w-5 h-5 text-lime-400" />,
+      labelEn: '🏠 Home',
+      icon: <Home className="w-5 h-5" />,
     },
     {
       id: 'my_farm',
       labelHi: '🗺️ मेरा खेत (My Farm)',
       labelEn: '🗺️ My Farm',
-      icon: <Map className="w-5 h-5 text-cyan-400" />,
-      badge: 'Satellite',
+      icon: <Map className="w-5 h-5" />,
+    },
+    {
+      id: 'my_crops',
+      labelHi: '🌾 मेरी फसलें (My Crops)',
+      labelEn: '🌾 My Crops',
+      icon: <Sprout className="w-5 h-5" />,
     },
     {
       id: 'crop_health',
       labelHi: '❤️ फसल सेहत (Crop Health)',
       labelEn: '❤️ Crop Health',
-      icon: <HeartPulse className="w-5 h-5 text-emerald-400" />,
-      badge: hotspotCount > 0 ? `${hotspotCount} Alert` : undefined,
+      icon: <HeartPulse className="w-5 h-5" />,
+      badge: hotspotCount > 0 ? `${hotspotCount}` : undefined,
     },
     {
-      id: 'pest_disease',
-      labelHi: '🐛 कीट व रोग (Pest & Disease)',
-      labelEn: '🐛 Pest & Disease',
-      icon: <Bug className="w-5 h-5 text-amber-400" />,
-      badge: 'AI Scan',
-    },
-    {
-      id: 'water_irrigation',
-      labelHi: '💧 पानी व सिंचाई (Water & Irrigation)',
-      labelEn: '💧 Water & Irrigation',
-      icon: <Droplets className="w-5 h-5 text-cyan-400" />,
-    },
-    {
-      id: 'weather',
-      labelHi: '🌤️ मौसम (Weather)',
-      labelEn: '🌤️ Weather',
-      icon: <CloudSun className="w-5 h-5 text-amber-300" />,
-    },
-    {
-      id: 'growth_yield',
-      labelHi: '📈 पैदावार व खाद (Growth & Yield)',
-      labelEn: '📈 Growth & Yield',
-      icon: <TrendingUp className="w-5 h-5 text-teal-400" />,
-    },
-    {
-      id: 'reports',
-      labelHi: '📋 रिपोर्ट (Reports)',
-      labelEn: '📋 Reports',
-      icon: <FileText className="w-5 h-5 text-slate-300" />,
+      id: 'voice_assistant',
+      labelHi: '🎙️ बोलकर पूछें (Ask GROOT)',
+      labelEn: '🎙️ Ask GROOT',
+      icon: <Mic className="w-5 h-5" />,
     },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden animate-in fade-in duration-200">
-      {/* Backdrop overlay */}
+    <div className="fixed inset-0 z-50 lg:hidden animate-in fade-in duration-150">
+      {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/85 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Slide-over Drawer Panel */}
-      <div className="fixed inset-y-0 left-0 max-w-[320px] sm:max-w-[360px] w-full bg-[#030d07] border-r border-emerald-500/25 shadow-2xl flex flex-col justify-between z-50 animate-in slide-in-from-left duration-250 overflow-hidden">
+      {/* Drawer Panel */}
+      <div className="fixed inset-y-0 left-0 max-w-[300px] w-full bg-white border-r border-[#DDE6DD] shadow-2xl flex flex-col justify-between z-50 animate-in slide-in-from-left duration-200">
         
         {/* Top Header */}
-        <div className="p-4 border-b border-emerald-500/15 flex items-center justify-between bg-slate-900/60">
+        <div className="p-4 border-b border-[#DDE6DD] flex items-center justify-between bg-[#F6F8F2]">
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 text-slate-950 font-display font-black text-lg shadow-md">
-              G
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#1F6B45] text-white font-bold text-lg">
+              🌱
             </div>
             <div>
-              <div className="font-display font-black text-base text-white tracking-wide flex items-center gap-1.5">
-                GROOT <span className="text-emerald-400 text-xs px-1.5 py-0.2 rounded bg-emerald-500/20 font-mono">AI</span>
+              <div className="font-black text-base text-[#1B2520] tracking-tight">
+                GROOT
               </div>
-              <div className="text-[10px] font-mono text-slate-400">
-                Farmer-First Suite
+              <div className="text-xs text-[#66756D]">
+                Smart Farming Assistant
               </div>
             </div>
           </div>
@@ -136,26 +105,26 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
               audio.playClick();
               onClose();
             }}
-            className="p-2.5 rounded-2xl bg-slate-900 text-slate-400 hover:text-white transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center"
+            className="p-2 rounded-xl text-[#66756D] hover:text-[#1B2520] hover:bg-[#DDE6DD]/50"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Scrollable Content */}
+        {/* Scrollable Navigation */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           
-          {/* Active Crop Pill in Mobile Drawer */}
-          <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30">
-            <div className="flex items-center justify-between text-[10px] font-mono text-emerald-400 font-bold uppercase mb-1">
-              <span>Active Crop</span>
+          {/* Active Crop Pill */}
+          <div className="p-3.5 rounded-xl bg-[#EDF4EC] border border-[#DDE6DD]">
+            <div className="flex items-center justify-between text-[11px] font-bold text-[#66756D] uppercase mb-1">
+              <span>{isHi ? 'सक्रिय फसल' : 'Active Crop'}</span>
               <button
                 onClick={() => {
                   audio.playClick();
                   onOpenCropSelector();
                   onClose();
                 }}
-                className="text-amber-300 underline"
+                className="text-[#1F6B45] underline font-bold"
               >
                 Change
               </button>
@@ -163,46 +132,52 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-2xl">{selectedVariety.iconEmoji || '🌾'}</span>
               <div className="truncate">
-                <div className="font-bold text-white text-xs truncate">{isHi ? selectedVariety.varietyHindi : selectedVariety.varietyName}</div>
-                <div className="text-[10px] text-slate-400 truncate">{currentPlot.name}</div>
+                <div className="font-bold text-[#1B2520] text-xs truncate">
+                  {isHi ? selectedVariety.cropHindi : selectedVariety.cropName}
+                </div>
+                <div className="text-[11px] text-[#66756D] truncate">
+                  {selectedVariety.varietyHindi || selectedVariety.varietyName || 'General'}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Navigation Items */}
-          <div className="space-y-1.5 font-sans">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold mb-2 font-mono px-1">
-              {isHi ? 'मुख्य नेविगेशन' : 'Navigation'}
+          <div className="space-y-1">
+            <span className="text-[11px] text-[#66756D] uppercase tracking-wider block font-bold px-2 mb-2">
+              {isHi ? 'मेन्यू' : 'NAVIGATION'}
             </span>
 
-            {navItems.map((tab) => {
-              const isActive = activeTab === tab.id;
+            {navItems.map((item) => {
+              const isActive = activeTab === item.id;
               return (
                 <button
-                  key={tab.id}
+                  key={item.id}
                   onClick={() => {
-                    onTabChange(tab.id);
                     audio.playClick();
+                    onTabChange(item.id);
                     onClose();
                   }}
-                  className={`w-full p-3 rounded-2xl text-left transition-all flex items-center justify-between border min-h-[48px] ${
+                  className={`w-full p-3 rounded-xl text-left transition-all flex items-center justify-between min-h-[48px] ${
                     isActive
-                      ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400 shadow-lg ring-1 ring-emerald-400/30 font-bold'
-                      : 'bg-slate-900/40 text-slate-300 border-slate-800 hover:border-emerald-500/30'
+                      ? 'bg-[#1F6B45] text-white font-bold'
+                      : 'text-[#1B2520] hover:bg-[#EDF4EC]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${isActive ? 'bg-emerald-500/30' : 'bg-slate-900'}`}>
-                      {tab.icon}
+                    <div className={isActive ? 'text-white' : 'text-[#1F6B45]'}>
+                      {item.icon}
                     </div>
-                    <div className="text-xs font-bold text-white">
-                      {isHi ? tab.labelHi : tab.labelEn}
-                    </div>
+                    <span className="text-xs font-bold">
+                      {isHi ? item.labelHi : item.labelEn}
+                    </span>
                   </div>
 
-                  {tab.badge && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-950 text-emerald-300 border border-emerald-500/40">
-                      {tab.badge}
+                  {item.badge && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      isActive ? 'bg-white text-[#1F6B45]' : 'bg-[#F2B84B] text-[#1B2520]'
+                    }`}>
+                      {item.badge}
                     </span>
                   )}
                 </button>
@@ -213,32 +188,26 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
         </div>
 
         {/* Bottom Settings Link */}
-        <div className="p-4 border-t border-emerald-500/15 bg-slate-900/60">
+        <div className="p-4 border-t border-[#DDE6DD] bg-[#F6F8F2]">
           <button
             onClick={() => {
               audio.playClick();
               onTabChange('settings');
               onClose();
             }}
-            className={`w-full p-3 rounded-2xl text-left transition-all flex items-center justify-between border min-h-[48px] ${
+            className={`w-full p-3 rounded-xl text-left transition-all flex items-center justify-between ${
               activeTab === 'settings'
-                ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400 ring-1 ring-emerald-400/30 font-bold'
-                : 'bg-slate-900 text-slate-300 border-slate-800'
+                ? 'bg-[#1F6B45] text-white font-bold'
+                : 'text-[#66756D] hover:text-[#1B2520]'
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-slate-950 text-amber-400">
-                <Settings className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white">
-                  {isHi ? '⚙️ सेटिंग्स (Settings)' : '⚙️ Settings'}
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  Language • Voice • Account
-                </div>
-              </div>
+              <Settings className="w-5 h-5 text-[#1F6B45]" />
+              <span className="text-xs font-bold">
+                {isHi ? '⚙️ सेटिंग्स (Settings)' : '⚙️ Settings'}
+              </span>
             </div>
+            <ChevronRight className="w-4 h-4 opacity-60" />
           </button>
         </div>
 
