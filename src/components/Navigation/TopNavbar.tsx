@@ -18,6 +18,7 @@ import {
 import { AppLanguage, UserUIMode, FarmPlot, RealtimeWeather, AppNavigationTab } from '../../types/groot';
 import { CropVariety } from '../../types/crops';
 import { audio } from '../../services/audioService';
+import { SUPPORTED_LANGUAGES } from '../../services/languageService';
 
 interface TopNavbarProps {
   activeTab: AppNavigationTab;
@@ -304,11 +305,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     onLanguageChange(e.target.value as AppLanguage);
                     audio.playClick();
                   }}
-                  className="agri-card-subtle pl-6 pr-2 py-1.5 text-[11px] font-mono font-bold rounded-xl text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 focus:outline-none appearance-none cursor-pointer bg-agri-950"
+                  className="agri-card-subtle pl-6 pr-2 py-1.5 text-[11px] font-mono font-bold rounded-xl text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 focus:outline-none appearance-none cursor-pointer bg-agri-950 max-w-[120px]"
                 >
-                  <option value="en">EN</option>
-                  <option value="hi">HI</option>
-                  <option value="hinglish">HG</option>
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code} className="bg-slate-950 text-emerald-300">
+                      {lang.flagEmoji} {lang.nativeName}
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -19,6 +19,7 @@ import { AppNavigationTab, UserUIMode, AppLanguage, FarmPlot, RealtimeWeather } 
 import { CropVariety } from '../../types/crops';
 import { DEMO_PLOTS } from './TopNavbar';
 import { audio } from '../../services/audioService';
+import { SUPPORTED_LANGUAGES } from '../../services/languageService';
 
 interface MobileSideDrawerProps {
   isOpen: boolean;
@@ -315,11 +316,13 @@ export const MobileSideDrawer: React.FC<MobileSideDrawerProps> = ({
                   onLanguageChange(e.target.value as AppLanguage);
                   audio.playClick();
                 }}
-                className="bg-slate-950 text-emerald-300 font-bold border border-emerald-500/40 rounded-lg px-2 py-1 text-xs focus:outline-none"
+                className="bg-slate-950 text-emerald-300 font-bold border border-emerald-500/40 rounded-lg px-2 py-1 text-xs focus:outline-none max-w-[150px]"
               >
-                <option value="hi">🇮🇳 हिन्दी</option>
-                <option value="en">🇬🇧 English</option>
-                <option value="hinglish">🗣️ Hinglish</option>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code} className="bg-slate-950 text-emerald-300">
+                    {lang.flagEmoji} {lang.nativeName}
+                  </option>
+                ))}
               </select>
             </div>
 

@@ -21,6 +21,7 @@ import { AppNavigationTab, UserUIMode, AppLanguage, FarmPlot, RealtimeWeather } 
 import { CropVariety } from '../../types/crops';
 import { DEMO_PLOTS } from './TopNavbar';
 import { audio } from '../../services/audioService';
+import { SUPPORTED_LANGUAGES } from '../../services/languageService';
 
 interface LeftSidebarProps {
   activeTab: AppNavigationTab;
@@ -309,9 +310,11 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
               }}
               className="w-full bg-agri-900 pl-6 pr-2 py-2 text-[11px] font-bold rounded-xl text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 focus:outline-none appearance-none cursor-pointer"
             >
-              <option value="en">🇬🇧 English</option>
-              <option value="hi">🇮🇳 हिन्दी</option>
-              <option value="hinglish">🗣️ Hinglish</option>
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code} className="bg-slate-950 text-emerald-300">
+                  {lang.flagEmoji} {lang.nativeName}
+                </option>
+              ))}
             </select>
           </div>
         </div>

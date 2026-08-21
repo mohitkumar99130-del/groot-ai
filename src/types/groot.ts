@@ -10,7 +10,20 @@ export type AppNavigationTab =
 
 export type UserUIMode = 'farmer_easy' | 'pro_agronomy';
 
-export type AppLanguage = 'hi' | 'en' | 'hinglish';
+export type AppLanguage = 
+  | 'hi' 
+  | 'en' 
+  | 'pa' 
+  | 'bn' 
+  | 'te' 
+  | 'ta' 
+  | 'mr' 
+  | 'gu' 
+  | 'kn' 
+  | 'ml' 
+  | 'or' 
+  | 'as' 
+  | 'hinglish';
 
 export * from './crops';
 

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { audio } from '../../services/audioService';
 import { realVoiceService } from '../../services/voiceService';
+import { getMultilingualVoiceScripts } from '../../services/languageService';
 
 interface FarmerMainHubProps {
   fusion: FusionResult;
@@ -59,74 +60,23 @@ export const FarmerMainHub: React.FC<FarmerMainHubProps> = ({
   const isHi = language === 'hi';
   const isHighRisk = fusion.riskPercentage > 50;
 
-  // Simple, Jargon-Free Spoken Scripts for Farmers
-  const getHealthSpokenText = () => {
-    if (isHi) {
-      return `नमस्ते किसान भाई! आपकी ${variety.varietyHindi} फसल (ज़ोन ${zone.id}) की सेहत 100 में से ${fusion.healthScore} है। ${
-        isHighRisk
-          ? 'खेत में पत्ती का रोग और नमी की कमी है, तुरंत ध्यान दें।'
-          : 'फसल हरी-भरी और स्वस्थ है।'
-      }`;
-    }
-    return `Hello farmer! Health score for your ${variety.varietyName} in Zone ${zone.id} is ${fusion.healthScore} out of 100. ${
-      isHighRisk
-        ? 'Leaf symptoms and moisture deficit detected. Treatment recommended.'
-        : 'The crop is green, healthy, and thriving.'
-    }`;
-  };
+  // Multilingual Spoken Scripts for all Indian Languages
+  const scripts = getMultilingualVoiceScripts(language, fusion, zone, telemetry, leaf, variety, weather);
 
-  const getFertilizerSpokenText = () => {
-    const targetN = variety.optimalNpkPerAcre.nitrogenKg;
-    const ureaBags = (Math.round(targetN * 1.1) / 45).toFixed(1);
-    if (isHi) {
-      return `खाद सलाह: ${variety.varietyHindi} के लिए प्रति एकड़ लगभग ${Math.round(targetN * 1.1)} किलो नीम कोटेड यूरिया (लगभग ${ureaBags} बोरी) और 30 किलो डीएपी डालें। सिंचाई के बाद सुबह के समय खाद दें।`;
-    }
-    return `Fertilizer Guide: For ${variety.varietyName}, apply ${Math.round(targetN * 1.1)} kg Neem Coated Urea (approx ${ureaBags} bags) and 30 kg DAP per acre post-irrigation in early morning.`;
-  };
-
-  const getPestSpokenText = () => {
-    if (isHi) {
-      if (leaf.id === 'blast' || leaf.symptomSeverity > 40) {
-        return `दवाई सलाह: पत्ती में झुलसा व फंगल रोग के लक्षण हैं। ट्राइसाइक्लाजोल दवा 0.6 ग्राम प्रति लीटर पानी में मिलाकर सुबह 8 बजे से पहले छिड़काव करें।`;
-      }
-      return `दवाई सलाह: फसल में अभी किसी खतरनाक कीड़े का प्रकोप नहीं है। सुरक्षा के लिए 20 दिन में नीम का तेल छिड़कें।`;
-    }
-    if (leaf.id === 'blast' || leaf.symptomSeverity > 40) {
-      return `Pest & Remedy Guide: Leaf scan indicates fungal infection. Spray Tricyclazole fungicide at 0.6 grams per liter of water early morning before 8 AM.`;
-    }
-    return `Pest & Remedy Guide: No severe pest attack currently detected. Apply preventive neem oil spray every 20 days.`;
-  };
-
-  const getWeatherSpokenText = () => {
-    if (isHi) {
-      return `मौसम सलाह: आज तापमान ${weather.temperature} डिग्री सेल्सियस है और हवा ${weather.windSpeed} किलोमीटर प्रति घंटा है। ${
-        weather.sprayAdvisory === 'Optimal'
-          ? 'छिड़काव और खाद देने के लिए आज का समय बहुत उत्तम है।'
-          : 'तेज हवा या बारिश के कारण छिड़काव में सावधानी रखें।'
-      }`;
-    }
-    return `Weather Guide: Current temperature is ${weather.temperature} degrees Celsius with wind speed at ${weather.windSpeed} km/h. ${
-      weather.sprayAdvisory === 'Optimal'
-        ? 'Conditions are optimal for field spraying and top dressing.'
-        : 'Exercise caution during high wind or sudden rain.'
-    }`;
-  };
-
-  const getFullSpokenText = () => {
-    if (isHi) {
-      return fusion.hindiVoiceSummary;
-    }
-    return fusion.englishVoiceSummary;
-  };
-
-  const getDefaultTranscript = () => {
-    if (isHi) {
-      return `नमस्ते किसान भाई! नीचे दिए गए बड़े बटनों को दबाएं और अपनी ${variety.varietyHindi} फसल की सेहत, खाद, दवाई और मौसम की पूरी जानकारी शुद्ध हिंदी में सुनें।`;
-    }
-    return `Welcome farmer! Tap any of the large action buttons below to hear complete spoken advisories for your ${variety.varietyName} crop in simple English.`;
-  };
+  const getHealthSpokenText = () => scripts.health;
+  const getFertilizerSpokenText = () => scripts.fertilizer;
+  const getPestSpokenText = () => scripts.disease;
+  const getWeatherSpokenText = () => scripts.weather;
+  const getFullSpokenText = () => scripts.fullAudit;
+  const getDefaultTranscript = () => scripts.welcome;
 
   const [activeTranscript, setActiveTranscript] = useState<string>(getDefaultTranscript());
+
+  React.useEffect(() => {
+    if (!currentNarrating) {
+      setActiveTranscript(scripts.welcome);
+    }
+  }, [language, variety, fusion, zone, leaf]);
 
   const speakSegment = async (id: string, text: string) => {
     audio.playClick();
@@ -138,7 +88,7 @@ export const FarmerMainHub: React.FC<FarmerMainHubProps> = ({
 
     setCurrentNarrating(id);
     setActiveTranscript(text);
-    await realVoiceService.speak(text, isHi ? 'hi' : 'en');
+    await realVoiceService.speak(text, language);
     setCurrentNarrating(null);
   };
 
