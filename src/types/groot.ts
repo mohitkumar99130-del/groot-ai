@@ -1,9 +1,19 @@
 export type LayerMode = 'rgb' | 'ndvi' | 'ndmi' | 'thermal' | 'hazard';
 
 export type AppNavigationTab = 
-  | 'dashboard' 
-  | 'camera_doctor' 
-  | 'fertilizer_doctor' 
+  | 'home'
+  | 'my_crops'
+  | 'my_farm'
+  | 'crop_health'
+  | 'pest_disease'
+  | 'water_irrigation'
+  | 'weather'
+  | 'growth_yield'
+  | 'reports'
+  | 'settings'
+  | 'dashboard'
+  | 'camera_doctor'
+  | 'fertilizer_doctor'
   | 'temporal_analytics'
   | 'sensor_simulator'
   | 'voice_assistant';
@@ -27,6 +37,31 @@ export type AppLanguage =
 
 export * from './crops';
 
+export interface FarmerProfile {
+  name: string;
+  phone: string;
+  village: string;
+  district: string;
+  state: string;
+  country: string;
+  totalLandAcres: number;
+  avatarUrl?: string;
+}
+
+export interface FarmField {
+  id: string;
+  name: string;
+  cropName: string;
+  varietyName: string;
+  areaAcres: number;
+  sowingDate: string;
+  sowingDaysAgo: number;
+  healthStatus: 'good' | 'attention' | 'action_needed';
+  healthScore: number;
+  soilMoisture: number;
+  coordinates: { lat: number; lng: number }[];
+  center: { lat: number; lng: number };
+}
 
 export interface FarmPlot {
   id: string;
@@ -40,6 +75,7 @@ export interface FarmPlot {
   latitude: number;
   longitude: number;
   locationName: string;
+  fields?: FarmField[];
 }
 
 export interface RealtimeWeather {

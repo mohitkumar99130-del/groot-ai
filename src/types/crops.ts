@@ -28,6 +28,8 @@ export interface CropVariety {
     zincKg?: number;
   };
   targetYieldQuintalPerAcre: number; // e.g. 20-25 quintals/acre
+  expectedYieldPerAcre?: string;
+  susceptiblePests?: string[];
   commonPests: string[];
   commonPestsHindi: string[];
   recommendedFertilizerSummary: string;
